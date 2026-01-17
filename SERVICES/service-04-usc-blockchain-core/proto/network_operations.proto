@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// Network operations service for blockchain network status
+service NetworkOperationsService {
+  // Network statistics
+  rpc GetNetworkInfo(google.protobuf.Empty) returns (GetNetworkInfoResponse);
+  
+  // Blockchain information
+  rpc GetChainInfo(google.protobuf.Empty) returns (GetChainInfoResponse);
+  
+  // Network peers
+  rpc GetPeers(GetPeersRequest) returns (GetPeersResponse);
+  
+  // Network performance metrics
+  rpc GetNetworkStats(GetNetworkStatsRequest) returns (GetNetworkStatsResponse);
+}
+
+// Get network info response
+message GetNetworkInfoResponse {
+  string network_id = 1;
+  string network_name = 2;
+  string chain_id = 3;
+  string genesis_hash = 4;
+  int64 current_block_height = 5;
+  string current_block_hash = 6;
+  int64 total_transactions = 7;
+  int64 total_blocks = 8;
+  string network_version = 9;
+  string consensus_algorithm = 10;
+  int64 block_time = 11; // average block time in seconds
+  string network_status = 12; // healthy, degraded, down
+  google.protobuf.Timestamp last_updated = 13;
+  int64 active_validators = 14;
+  string total_stake = 15;
+}
+
+// Get chain info response
+message GetChainInfoResponse {
+  string chain_id = 1;
+  string chain_name = 2;
+  string chain_type = 3; // mainnet, testnet, devnet
+  string genesis_block_hash = 4;
+  int64 genesis_timestamp = 5;
+  string consensus_algorithm = 6;
+  int64 block_time = 7;
+  int64 block_size_limit = 8;
+  int64 gas_limit = 9;
+  string network_version = 10;
+  string client_version = 11;
+  string protocol_version = 12;
+  google.protobuf.Timestamp last_updated = 13;
+  string chain_status = 14; // active, maintenance, deprecated
+}
+
+// Get peers request
+message GetPeersRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  string peer_type = 3; // validator, full_node, light_node, all
+  string status = 4; // connected, disconnected, all
+}
+
+// Get peers response
+message GetPeersResponse {
+  repeated PeerInfo peers = 1;
+  int32 total_count = 2;
+  bool has_more = 3;
+  int32 next_offset = 4;
+  int32 connected_count = 5;
+  int32 disconnected_count = 6;
+}
+
+// Get network stats request
+message GetNetworkStatsRequest {
+  string time_range = 1; // 1h, 24h, 7d, 30d
+  string metric_type = 2; // all, performance, consensus, network
+}
+
+// Get network stats response
+message GetNetworkStatsResponse {
+  NetworkMetrics metrics = 1;
+  google.protobuf.Timestamp generated_at = 2;
+  string time_range = 3;
+}
+
+// Peer info
+message PeerInfo {
+  string peer_id = 1;
+  string peer_address = 2;
+  string peer_type = 3; // validator, full_node, light_node
+  string status = 4; // connected, disconnected, connecting
+  string client_version = 5;
+  string protocol_version = 6;
+  int64 connection_time = 7;
+  int64 last_seen = 8;
+  string country = 9;
+  string city = 10;
+  int64 latency_ms = 11;
+  string bandwidth = 12;
+  bool is_validator = 13;
+  string stake_amount = 14;
+}
+
+// Network metrics
+message NetworkMetrics {
+  // Performance metrics
+  int64 blocks_per_hour = 1;
+  int64 transactions_per_second = 2;
+  int64 average_block_time = 3;
+  int64 average_transaction_fee = 4;
+  string total_gas_used = 5;
+  
+  // Consensus metrics
+  int64 active_validators = 6;
+  int64 total_stake = 7;
+  string average_uptime = 8;
+  int64 consensus_failures = 9;
+  string consensus_efficiency = 10;
+  
+  // Network metrics
+  int64 total_peers = 11;
+  int64 connected_peers = 12;
+  int64 network_latency = 13;
+  string network_throughput = 14;
+  int64 sync_status = 15;
+  
+  // Economic metrics
+  string total_supply = 16;
+  string circulating_supply = 17;
+  string inflation_rate = 18;
+  string staking_ratio = 19;
+  string validator_rewards = 20;
+  
+  // Health metrics
+  string network_health_score = 21;
+  int64 uptime_percentage = 22;
+  int64 error_rate = 23;
+  string performance_trend = 24; // improving, stable, declining
+}

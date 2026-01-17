@@ -1,0 +1,338 @@
+syntax = "proto3";
+package streaming.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/streaming/types";
+
+// StreamStatus defines the status of a stream
+enum StreamStatus {
+  STREAM_STATUS_UNSPECIFIED = 0;
+  STREAM_STATUS_ACTIVE = 1;
+  STREAM_STATUS_STOPPED = 2;
+  STREAM_STATUS_PAUSED = 3;
+}
+
+// SubscriptionStatus defines the status of a stream subscription
+enum SubscriptionStatus {
+  SUBSCRIPTION_STATUS_UNSPECIFIED = 0;
+  SUBSCRIPTION_STATUS_ACTIVE = 1;
+  SUBSCRIPTION_STATUS_PAUSED = 2;
+  SUBSCRIPTION_STATUS_CANCELLED = 3;
+}
+
+// StreamType defines the type of stream
+enum StreamType {
+  STREAM_TYPE_UNSPECIFIED = 0;
+  STREAM_TYPE_DATA = 1;
+  STREAM_TYPE_VIDEO = 2;
+  STREAM_TYPE_AUDIO = 3;
+  STREAM_TYPE_EVENTS = 4;
+}
+
+// SubscriptionType defines the type of subscription
+enum SubscriptionType {
+  SUBSCRIPTION_TYPE_UNSPECIFIED = 0;
+  SUBSCRIPTION_TYPE_FULL = 1;
+  SUBSCRIPTION_TYPE_FILTERED = 2;
+  SUBSCRIPTION_TYPE_EVENTS_ONLY = 3;
+}
+
+// QoSLevel defines the quality of service level for streaming
+enum QoSLevel {
+  QOS_LEVEL_UNSPECIFIED = 0;
+  QOS_LEVEL_BEST_EFFORT = 1;
+  QOS_LEVEL_GUARANTEED = 2;
+  QOS_LEVEL_REALTIME = 3;
+  QOS_LEVEL_CRITICAL = 4;
+}
+
+// DataType defines the type of streamed data
+enum DataType {
+  DATA_TYPE_UNSPECIFIED = 0;
+  DATA_TYPE_JSON = 1;
+  DATA_TYPE_BINARY = 2;
+  DATA_TYPE_TEXT = 3;
+  DATA_TYPE_VIDEO_FRAME = 4;
+  DATA_TYPE_AUDIO_FRAME = 5;
+  DATA_TYPE_EVENT = 6;
+}
+
+// DataStatus defines the status of streamed data
+enum DataStatus {
+  DATA_STATUS_UNSPECIFIED = 0;
+  DATA_STATUS_SENT = 1;
+  DATA_STATUS_RECEIVED = 2;
+  DATA_STATUS_PROCESSED = 3;
+  DATA_STATUS_FAILED = 4;
+}
+
+// StreamQuality defines the quality settings for streaming
+message StreamQuality {
+  int32 resolution_width = 1;
+  int32 resolution_height = 2;
+  int32 frame_rate = 3;
+  int32 bitrate_kbps = 4;
+  string quality_preset = 5; // "low", "medium", "high", "ultra"
+}
+
+// BandwidthLimits defines bandwidth limits for streaming
+message BandwidthLimits {
+  int64 max_bandwidth_bps = 1; // Maximum bandwidth in bits per second
+  int64 min_bandwidth_bps = 2; // Minimum bandwidth in bits per second
+  int64 burst_bandwidth_bps = 3; // Burst bandwidth allowance
+  int64 bandwidth_window_seconds = 4; // Bandwidth calculation window
+}
+
+// StreamConfig defines the configuration for a stream
+message StreamConfig {
+  QoSLevel qos_level = 1;
+  BandwidthLimits bandwidth_limits = 2;
+  int64 max_latency_ms = 3; // Maximum latency in milliseconds
+  int64 buffer_size = 4; // Buffer size in bytes
+  bool compression_enabled = 5;
+  string compression_algorithm = 6; // "gzip", "lz4", "zstd"
+  bool encryption_enabled = 7;
+  string encryption_algorithm = 8; // "aes256", "chacha20"
+  int64 max_subscribers = 9;
+  int64 data_retention_seconds = 10;
+  repeated DataType allowed_data_types = 11;
+  StreamQuality stream_quality = 12;
+}
+
+// FilterCriteria defines the criteria for filtering stream data
+message FilterCriteria {
+  repeated DataType data_types = 1;
+  repeated string keywords = 2;
+  map<string, string> metadata_filters = 3;
+  double min_confidence_score = 4;
+  double max_confidence_score = 5;
+  google.protobuf.Timestamp start_time = 6;
+  google.protobuf.Timestamp end_time = 7;
+  int64 max_data_size = 8;
+  int64 min_data_size = 9;
+  repeated string exclude_keywords = 10;
+}
+
+// MsgStartStream defines a message for starting a real-time stream
+message MsgStartStream {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string streamer = 1;
+  string stream_name = 2;
+  StreamType stream_type = 3;
+  StreamConfig stream_config = 4 [(gogoproto.nullable) = false];
+  string target_audience = 5;
+  string memo = 6;
+}
+
+// MsgStartStreamResponse defines the response for MsgStartStream
+message MsgStartStreamResponse {
+  bool success = 1;
+  string stream_id = 2;
+  string start_hash = 3;
+  string transaction_hash = 4;
+}
+
+// MsgStopStream defines a message for stopping a real-time stream
+message MsgStopStream {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string stopper = 1;
+  string stream_id = 2;
+  string stop_reason = 3;
+  string memo = 4;
+}
+
+// MsgStopStreamResponse defines the response for MsgStopStream
+message MsgStopStreamResponse {
+  bool success = 1;
+  string stop_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgUpdateStream defines a message for updating stream configuration
+message MsgUpdateStream {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string updater = 1;
+  string stream_id = 2;
+  StreamConfig new_config = 3 [(gogoproto.nullable) = false];
+  string new_audience = 4;
+  string memo = 5;
+}
+
+// MsgUpdateStreamResponse defines the response for MsgUpdateStream
+message MsgUpdateStreamResponse {
+  bool success = 1;
+  string update_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgStreamData defines a message for streaming data
+message MsgStreamData {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string streamer = 1;
+  string stream_id = 2;
+  string data_payload = 3; // JSON string or binary data
+  DataType data_type = 4;
+  google.protobuf.Timestamp timestamp = 5 [(gogoproto.nullable) = false];
+  string memo = 6;
+}
+
+// MsgStreamDataResponse defines the response for MsgStreamData
+message MsgStreamDataResponse {
+  bool success = 1;
+  string data_id = 2;
+  string streaming_hash = 3;
+  string transaction_hash = 4;
+}
+
+// MsgSubscribeStream defines a message for subscribing to a stream
+message MsgSubscribeStream {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string subscriber = 1;
+  string stream_id = 2;
+  SubscriptionType subscription_type = 3;
+  FilterCriteria filter_criteria = 4 [(gogoproto.nullable) = false];
+  string memo = 5;
+}
+
+// MsgSubscribeStreamResponse defines the response for MsgSubscribeStream
+message MsgSubscribeStreamResponse {
+  bool success = 1;
+  string subscription_id = 2;
+  string subscription_hash = 3;
+  string transaction_hash = 4;
+}
+
+// QueryStreamRequest defines the request for querying a stream
+message QueryStreamRequest {
+  string stream_id = 1;
+}
+
+// QueryStreamResponse defines the response for querying a stream
+message QueryStreamResponse {
+  Stream stream = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryStreamsRequest defines the request for querying multiple streams
+message QueryStreamsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  string streamer = 2;
+  StreamType stream_type = 3;
+  StreamStatus status = 4;
+}
+
+// QueryStreamsResponse defines the response for querying multiple streams
+message QueryStreamsResponse {
+  repeated Stream streams = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryStreamDataRequest defines the request for querying stream data
+message QueryStreamDataRequest {
+  string stream_id = 1;
+  google.protobuf.Timestamp start_time = 2 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp end_time = 3 [(gogoproto.nullable) = false];
+  DataType data_type = 4;
+}
+
+// QueryStreamDataResponse defines the response for querying stream data
+message QueryStreamDataResponse {
+  repeated StreamData data = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryStreamSubscriptionsRequest defines the request for querying stream subscriptions
+message QueryStreamSubscriptionsRequest {
+  string stream_id = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+  string subscriber = 3;
+  SubscriptionType subscription_type = 4;
+}
+
+// QueryStreamSubscriptionsResponse defines the response for querying stream subscriptions
+message QueryStreamSubscriptionsResponse {
+  repeated StreamSubscription subscriptions = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryStreamStatsRequest defines the request for querying stream statistics
+message QueryStreamStatsRequest {
+  string stream_id = 1;
+}
+
+// QueryStreamStatsResponse defines the response for querying stream statistics
+message QueryStreamStatsResponse {
+  StreamStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// Stream represents a real-time stream
+message Stream {
+  string id = 1;
+  string name = 2;
+  string streamer = 3;
+  StreamType stream_type = 4;
+  StreamStatus status = 5;
+  StreamConfig config = 6 [(gogoproto.nullable) = false];
+  string target_audience = 7;
+  google.protobuf.Timestamp started_at = 8 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp stopped_at = 9 [(gogoproto.nullable) = false];
+  int64 total_subscribers = 10;
+  int64 total_data_points = 11;
+  google.protobuf.Timestamp last_activity = 12 [(gogoproto.nullable) = false];
+  string memo = 13;
+}
+
+// StreamData represents streamed data
+message StreamData {
+  string id = 1;
+  string stream_id = 2;
+  string data_payload = 3;
+  DataType data_type = 4;
+  google.protobuf.Timestamp timestamp = 5 [(gogoproto.nullable) = false];
+  string streamer = 6;
+  map<string, string> metadata = 7; // Structured metadata
+  DataStatus status = 8;
+  int64 data_size_bytes = 9; // Size of data payload
+  string checksum = 10; // Data integrity checksum
+}
+
+// StreamSubscription represents a stream subscription
+message StreamSubscription {
+  string id = 1;
+  string stream_id = 2;
+  string subscriber = 3;
+  SubscriptionType subscription_type = 4;
+  FilterCriteria filter_criteria = 5 [(gogoproto.nullable) = false];
+  SubscriptionStatus status = 6;
+  google.protobuf.Timestamp subscribed_at = 7 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp last_activity = 8 [(gogoproto.nullable) = false];
+  int64 data_received = 9;
+  string memo = 10;
+}
+
+// StreamStats represents stream statistics
+message StreamStats {
+  int64 total_streams = 1;
+  int64 active_streams = 2;
+  int64 stopped_streams = 3;
+  int64 total_subscribers = 4;
+  int64 total_data_points = 5;
+  int64 average_stream_duration_seconds = 6;
+  StreamType most_popular_stream_type = 7;
+  int64 total_bandwidth_used_bytes = 8;
+  double average_bandwidth_utilization = 9; // Average bandwidth utilization percentage
+  int64 peak_concurrent_streams = 10; // Peak number of concurrent streams
+  double stream_success_rate = 11; // Stream success rate percentage
+  google.protobuf.Timestamp last_activity = 12 [(gogoproto.nullable) = false];
+}

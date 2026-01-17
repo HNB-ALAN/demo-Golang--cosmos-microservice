@@ -1,0 +1,131 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+import "block_operations.proto";
+
+// Streaming operations service for real-time blockchain data
+service StreamingOperationsService {
+  // Live block updates
+  rpc StreamBlocks(StreamBlocksRequest) returns (stream StreamBlocksResponse);
+  
+  // Live transaction feed
+  rpc StreamTransactions(StreamTransactionsRequest) returns (stream StreamTransactionsResponse);
+  
+  // Validator status updates
+  rpc StreamValidatorEvents(StreamValidatorEventsRequest) returns (stream StreamValidatorEventsResponse);
+  
+  // Network event stream
+  rpc StreamNetworkEvents(StreamNetworkEventsRequest) returns (stream StreamNetworkEventsResponse);
+}
+
+// Stream blocks request
+message StreamBlocksRequest {
+  string client_id = 1;
+  bool include_transactions = 2;
+  bool include_receipts = 3;
+  string filter_type = 4; // all, confirmed, pending
+  repeated string validator_addresses = 5; // filter by validators
+  int32 max_blocks_per_second = 6;
+}
+
+// Stream blocks response
+message StreamBlocksResponse {
+  string block_hash = 1;
+  int64 block_number = 2;
+  string previous_block_hash = 3;
+  string merkle_root = 4;
+  int64 timestamp = 5;
+  string validator_address = 6;
+  int64 gas_used = 7;
+  int64 gas_limit = 8;
+  repeated Transaction transactions = 9;
+  string block_data = 10;
+  google.protobuf.Timestamp created_at = 11;
+  string event_type = 12; // block_created, block_confirmed, block_finalized
+}
+
+// Stream transactions request
+message StreamTransactionsRequest {
+  string client_id = 1;
+  repeated string from_addresses = 2; // filter by sender
+  repeated string to_addresses = 3; // filter by receiver
+  string transaction_type = 4; // all, transfer, contract, staking
+  string status = 5; // all, pending, confirmed, failed
+  int32 max_transactions_per_second = 6;
+}
+
+// Stream transactions response
+message StreamTransactionsResponse {
+  string transaction_hash = 1;
+  string from_address = 2;
+  string to_address = 3;
+  string amount = 4;
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  int64 gas_used = 7;
+  string data = 8;
+  int32 status = 9; // 0=Pending, 1=Confirmed, 2=Failed
+  int64 block_number = 10;
+  string block_hash = 11;
+  int64 transaction_index = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp confirmed_at = 14;
+  string event_type = 15; // transaction_submitted, transaction_confirmed, transaction_failed
+  string transaction_type = 16; // transfer, contract_call, staking, unstaking
+}
+
+// Stream validator events request
+message StreamValidatorEventsRequest {
+  string client_id = 1;
+  repeated string validator_addresses = 2; // filter by validators
+  string event_type = 3; // all, status_change, performance, rewards
+  bool include_delegator_events = 4;
+}
+
+// Stream validator events response
+message StreamValidatorEventsResponse {
+  string validator_address = 1;
+  string validator_id = 2;
+  string event_type = 3; // validator_joined, validator_left, validator_jailed, validator_unjailed, block_proposed, reward_distributed
+  string event_data = 4; // JSON data specific to event type
+  string stake_amount = 5;
+  string delegated_amount = 6;
+  string commission_rate = 7;
+  string uptime_percentage = 8;
+  int64 blocks_proposed = 9;
+  string rewards_earned = 10;
+  google.protobuf.Timestamp event_time = 11;
+  string block_hash = 12;
+  int64 block_number = 13;
+  repeated string affected_delegators = 14;
+}
+
+// Stream network events request
+message StreamNetworkEventsRequest {
+  string client_id = 1;
+  string event_type = 2; // all, consensus, network, economic, health
+  string severity = 3; // all, info, warning, error, critical
+  bool include_peer_events = 4;
+}
+
+// Stream network events response
+message StreamNetworkEventsResponse {
+  string event_id = 1;
+  string event_type = 2; // consensus_failure, network_partition, economic_event, health_alert, peer_connected, peer_disconnected
+  string severity = 3; // info, warning, error, critical
+  string title = 4;
+  string description = 5;
+  string event_data = 6; // JSON data specific to event type
+  google.protobuf.Timestamp event_time = 7;
+  string source = 8; // validator, network, consensus, economic
+  string affected_components = 9; // JSON array of affected components
+  string resolution_status = 10; // open, investigating, resolved, false_positive
+  string auto_resolution = 11; // true, false
+  int64 impact_score = 12; // 1-10 impact severity
+}
+
+// Transaction structure is imported from block_operations.proto

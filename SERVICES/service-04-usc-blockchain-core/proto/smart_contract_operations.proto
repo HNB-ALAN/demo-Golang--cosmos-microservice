@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+
+// Smart contract operations service for smart contract management
+service SmartContractOperationsService {
+  // Deploy smart contracts
+  rpc DeployContract(DeployContractRequest) returns (DeployContractResponse);
+  
+  // Execute contract functions
+  rpc ExecuteContract(ExecuteContractRequest) returns (ExecuteContractResponse);
+  
+  // Read contract state
+  rpc QueryContract(QueryContractRequest) returns (QueryContractResponse);
+  
+  // Contract bytecode
+  rpc GetContractCode(GetContractCodeRequest) returns (GetContractCodeResponse);
+  
+  // Contract storage data
+  rpc GetContractStorage(GetContractStorageRequest) returns (GetContractStorageResponse);
+}
+
+// Deploy contract request
+message DeployContractRequest {
+  string from_address = 1;
+  string bytecode = 2;
+  string abi = 3;
+  string constructor_args = 4;
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  string user_id = 7;
+  string contract_name = 8;
+  string contract_version = 9;
+  string description = 10;
+}
+
+// Deploy contract response
+message DeployContractResponse {
+  string contract_address = 1;
+  string transaction_hash = 2;
+  int32 status = 3; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 4;
+  google.protobuf.Timestamp deployed_at = 5;
+  string gas_used = 6;
+  string contract_abi = 7;
+}
+
+// Execute contract request
+message ExecuteContractRequest {
+  string contract_address = 1;
+  string function_name = 2;
+  repeated string parameters = 3;
+  string from_address = 4;
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  string value = 7; // USC amount to send with transaction
+  string user_id = 8;
+}
+
+// Execute contract response
+message ExecuteContractResponse {
+  string transaction_hash = 1;
+  int32 status = 2; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 3;
+  google.protobuf.Timestamp executed_at = 4;
+  string gas_used = 5;
+  string return_value = 6;
+  repeated Log logs = 7;
+}
+
+// Query contract request
+message QueryContractRequest {
+  string contract_address = 1;
+  string function_name = 2;
+  repeated string parameters = 3;
+  string from_address = 4;
+  int64 block_number = 5; // optional, latest if not specified
+}
+
+// Query contract response
+message QueryContractResponse {
+  string return_value = 1;
+  bool success = 2;
+  string error_message = 3;
+  int64 block_number = 4;
+  google.protobuf.Timestamp queried_at = 5;
+  repeated string decoded_results = 6;
+}
+
+// Get contract code request
+message GetContractCodeRequest {
+  string contract_address = 1;
+  int64 block_number = 2; // optional, latest if not specified
+}
+
+// Get contract code response
+message GetContractCodeResponse {
+  string bytecode = 1;
+  string abi = 2;
+  string source_code = 3;
+  string compiler_version = 4;
+  string contract_name = 5;
+  int64 block_number = 6;
+  google.protobuf.Timestamp created_at = 7;
+  bool is_verified = 8;
+}
+
+// Get contract storage request
+message GetContractStorageRequest {
+  string contract_address = 1;
+  string storage_key = 2;
+  int64 block_number = 3; // optional, latest if not specified
+}
+
+// Get contract storage response
+message GetContractStorageResponse {
+  string storage_value = 1;
+  string storage_key = 2;
+  int64 block_number = 3;
+  google.protobuf.Timestamp retrieved_at = 4;
+  string storage_type = 5;
+  string decoded_value = 6;
+}
+
+// Log entry (reused from transaction_operations.proto)
+message Log {
+  string address = 1;
+  repeated string topics = 2;
+  string data = 3;
+  int64 log_index = 4;
+  int64 transaction_index = 5;
+  string transaction_hash = 6;
+  int64 block_number = 7;
+  string block_hash = 8;
+}

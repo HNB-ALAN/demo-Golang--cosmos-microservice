@@ -1,0 +1,273 @@
+syntax = "proto3";
+package store_bridge.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/store_bridge/types";
+
+// BridgeConfig represents structured bridge configuration
+message BridgeConfig {
+  int32 confirmation_blocks = 1;
+  int32 timeout_blocks = 2;
+  bool enable_auto_finalization = 3;
+  bool enable_auto_retry = 4;
+  int32 max_retry_attempts = 5;
+  map<string, string> custom_settings = 6;
+}
+
+// BridgeFees represents bridge fee structure
+message BridgeFees {
+  cosmos.base.v1beta1.Coin base_fee = 1 [(gogoproto.nullable) = false];
+  double fee_percentage = 2;
+  cosmos.base.v1beta1.Coin minimum_fee = 3 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin maximum_fee = 4 [(gogoproto.nullable) = false];
+  bool dynamic_pricing = 5;
+}
+
+// SecurityDeposit represents security deposit requirements
+message SecurityDeposit {
+  cosmos.base.v1beta1.Coin required_deposit = 1 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin current_deposit = 2 [(gogoproto.nullable) = false];
+  int32 deposit_duration_blocks = 3;
+  bool auto_refund = 4;
+  string deposit_conditions = 5;
+}
+
+// BridgeType defines the type of cross-chain bridge
+enum BridgeType {
+  BRIDGE_TYPE_UNSPECIFIED = 0;
+  BRIDGE_TYPE_ASSET = 1;
+  BRIDGE_TYPE_DATA = 2;
+  BRIDGE_TYPE_MESSAGE = 3;
+  BRIDGE_TYPE_NFT = 4;
+  BRIDGE_TYPE_CONTRACT = 5;
+}
+
+// BridgeStatus defines the status of a bridge
+enum BridgeStatus {
+  BRIDGE_STATUS_UNSPECIFIED = 0;
+  BRIDGE_STATUS_ACTIVE = 1;
+  BRIDGE_STATUS_INACTIVE = 2;
+  BRIDGE_STATUS_MAINTENANCE = 3;
+  BRIDGE_STATUS_ERROR = 4;
+}
+
+// OperationType defines the type of bridge operation
+enum OperationType {
+  OPERATION_TYPE_UNSPECIFIED = 0;
+  OPERATION_TYPE_TRANSFER = 1;
+  OPERATION_TYPE_MESSAGE = 2;
+  OPERATION_TYPE_DATA = 3;
+  OPERATION_TYPE_NFT = 4;
+  OPERATION_TYPE_CONTRACT = 5;
+}
+
+// OperationStatus defines the status of a bridge operation
+enum OperationStatus {
+  OPERATION_STATUS_UNSPECIFIED = 0;
+  OPERATION_STATUS_PENDING = 1;
+  OPERATION_STATUS_COMPLETED = 2;
+  OPERATION_STATUS_FAILED = 3;
+  OPERATION_STATUS_CANCELLED = 4;
+  OPERATION_STATUS_TIMEOUT = 5;
+}
+
+// ChainIdentifier represents a standardized chain identifier
+message ChainIdentifier {
+  string chain_id = 1;
+  string chain_name = 2;
+  string chain_type = 3; // "cosmos", "ethereum", "bitcoin", "custom"
+  string rpc_endpoint = 4;
+  string explorer_url = 5;
+  string native_token = 6;
+  int64 block_time = 7; // Average block time in seconds
+}
+
+// MsgCreateBridge defines a message for creating a cross-chain bridge
+message MsgCreateBridge {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string creator = 1;
+  ChainIdentifier source_chain = 2 [(gogoproto.nullable) = false];
+  ChainIdentifier target_chain = 3 [(gogoproto.nullable) = false];
+  BridgeType bridge_type = 4;
+  BridgeConfig bridge_config = 5 [(gogoproto.nullable) = false];
+  BridgeFees bridge_fees = 6 [(gogoproto.nullable) = false];
+  SecurityDeposit security_deposit = 7 [(gogoproto.nullable) = false];
+  string memo = 8;
+}
+
+// MsgCreateBridgeResponse defines the response for MsgCreateBridge
+message MsgCreateBridgeResponse {
+  bool success = 1;
+  string bridge_id = 2;
+  string creation_hash = 3;
+  string transaction_hash = 4;
+}
+
+// MsgTransferAssets defines a message for transferring assets across chains
+message MsgTransferAssets {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string sender = 1;
+  string bridge_id = 2;
+  string recipient = 3;
+  cosmos.base.v1beta1.Coin amount = 4 [(gogoproto.nullable) = false];
+  ChainIdentifier source_chain = 5 [(gogoproto.nullable) = false];
+  ChainIdentifier target_chain = 6 [(gogoproto.nullable) = false];
+  map<string, string> transfer_data = 7;
+  cosmos.base.v1beta1.Coin transfer_fee = 8 [(gogoproto.nullable) = false];
+  string memo = 9;
+}
+
+// MsgTransferAssetsResponse defines the response for MsgTransferAssets
+message MsgTransferAssetsResponse {
+  bool success = 1;
+  string transfer_id = 2;
+  string transfer_hash = 3;
+  string transaction_hash = 4;
+}
+
+// MsgFinalizeBridge defines a message for finalizing a bridge operation
+message MsgFinalizeBridge {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string finalizer = 1;
+  string bridge_id = 2;
+  string operation_id = 3;
+  string finalization_proof = 4;
+  string memo = 5;
+}
+
+// MsgFinalizeBridgeResponse defines the response for MsgFinalizeBridge
+message MsgFinalizeBridgeResponse {
+  bool success = 1;
+  string finalization_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgCancelBridge defines a message for canceling a bridge operation
+message MsgCancelBridge {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string canceller = 1;
+  string bridge_id = 2;
+  string operation_id = 3;
+  string cancel_reason = 4;
+  string memo = 5;
+}
+
+// MsgCancelBridgeResponse defines the response for MsgCancelBridge
+message MsgCancelBridgeResponse {
+  bool success = 1;
+  string cancellation_hash = 2;
+  string transaction_hash = 3;
+}
+
+// QueryBridgeRequest defines the request for querying a bridge
+message QueryBridgeRequest {
+  string bridge_id = 1;
+}
+
+// QueryBridgeResponse defines the response for querying a bridge
+message QueryBridgeResponse {
+  Bridge bridge = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryBridgesRequest defines the request for querying multiple bridges
+message QueryBridgesRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  ChainIdentifier source_chain = 2;
+  ChainIdentifier target_chain = 3;
+  BridgeType bridge_type = 4;
+  BridgeStatus status = 5;
+}
+
+// QueryBridgesResponse defines the response for querying multiple bridges
+message QueryBridgesResponse {
+  repeated Bridge bridges = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryBridgeOperationsRequest defines the request for querying bridge operations
+message QueryBridgeOperationsRequest {
+  string bridge_id = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+  OperationType operation_type = 3;
+  OperationStatus status = 4;
+}
+
+// QueryBridgeOperationsResponse defines the response for querying bridge operations
+message QueryBridgeOperationsResponse {
+  repeated BridgeOperation operations = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryBridgeStatsRequest defines the request for querying bridge statistics
+message QueryBridgeStatsRequest {
+  string bridge_id = 1;
+}
+
+// QueryBridgeStatsResponse defines the response for querying bridge statistics
+message QueryBridgeStatsResponse {
+  BridgeStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// Bridge represents a cross-chain bridge
+message Bridge {
+  string id = 1;
+  string creator = 2;
+  ChainIdentifier source_chain = 3 [(gogoproto.nullable) = false];
+  ChainIdentifier target_chain = 4 [(gogoproto.nullable) = false];
+  BridgeType bridge_type = 5;
+  BridgeStatus status = 6;
+  BridgeConfig config = 7 [(gogoproto.nullable) = false];
+  BridgeFees fees = 8 [(gogoproto.nullable) = false];
+  SecurityDeposit security_deposit = 9 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp created_at = 10 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp updated_at = 11 [(gogoproto.nullable) = false];
+  int64 total_operations = 12;
+  int64 successful_operations = 13;
+  int64 failed_operations = 14;
+  cosmos.base.v1beta1.Coin total_volume = 15 [(gogoproto.nullable) = false];
+  string memo = 16;
+}
+
+// BridgeOperation represents a bridge operation
+message BridgeOperation {
+  string id = 1;
+  string bridge_id = 2;
+  OperationType operation_type = 3;
+  string sender = 4;
+  string recipient = 5;
+  cosmos.base.v1beta1.Coin amount = 6 [(gogoproto.nullable) = false];
+  ChainIdentifier source_chain = 7 [(gogoproto.nullable) = false];
+  ChainIdentifier target_chain = 8 [(gogoproto.nullable) = false];
+  OperationStatus status = 9;
+  google.protobuf.Timestamp created_at = 10 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp completed_at = 11;
+  string transaction_hash = 12;
+  string finalization_proof = 13;
+  string memo = 14;
+}
+
+// BridgeStats represents bridge statistics
+message BridgeStats {
+  int64 total_bridges = 1;
+  int64 active_bridges = 2;
+  int64 total_operations = 3;
+  int64 successful_operations = 4;
+  int64 failed_operations = 5;
+  double success_rate = 6;
+  cosmos.base.v1beta1.Coin total_volume = 7 [(gogoproto.nullable) = false];
+  int64 average_operation_time_seconds = 8;
+  string most_active_bridge = 9;
+  google.protobuf.Timestamp last_activity = 10 [(gogoproto.nullable) = false];
+}

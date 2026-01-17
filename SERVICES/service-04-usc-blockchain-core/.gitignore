@@ -1,0 +1,66 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Build artifacts
+main
+service-04-service
+uscd
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Data directories (RocksDB, Cosmos SDK)
+data/
+*.db
+*.ldb
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Coverage reports
+coverage.html
+coverage.txt
+
+# Generated files
+*.pb.go
+*_grpc.pb.go
+
+# Backup files
+*.bak
+*.backup
+

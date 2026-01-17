@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+
+// Custom token operations service for store coin functionality
+service CustomTokenOperationsService {
+  // Create store coins
+  rpc CreateBlockchainToken(CreateBlockchainTokenRequest) returns (CreateBlockchainTokenResponse);
+  
+  // Mint store coins
+  rpc MintTokens(MintTokensRequest) returns (MintTokensResponse);
+  
+  // Burn store coins
+  rpc BurnTokens(BurnTokensRequest) returns (BurnTokensResponse);
+  
+  // Token metadata
+  rpc GetTokenInfo(GetTokenInfoRequest) returns (GetTokenInfoResponse);
+  
+  // Token balance check
+  rpc GetTokenBalance(GetTokenBalanceRequest) returns (GetTokenBalanceResponse);
+}
+
+// Create blockchain token request
+message CreateBlockchainTokenRequest {
+  string from_address = 1;
+  string token_name = 2;
+  string token_symbol = 3;
+  string total_supply = 4;
+  int32 decimals = 5;
+  string gas_price = 6;
+  int64 gas_limit = 7;
+  string user_id = 8;
+  string store_id = 9;
+  string token_description = 10;
+  string token_image_url = 11;
+  bool is_mintable = 12;
+  bool is_burnable = 13;
+  string initial_holder = 14;
+}
+
+// Create blockchain token response
+message CreateBlockchainTokenResponse {
+  string contract_address = 1;
+  string transaction_hash = 2;
+  int32 status = 3; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 4;
+  google.protobuf.Timestamp created_at = 5;
+  string gas_used = 6;
+  string token_id = 7;
+}
+
+// Mint tokens request
+message MintTokensRequest {
+  string contract_address = 1;
+  string to_address = 2;
+  string amount = 3;
+  string gas_price = 4;
+  int64 gas_limit = 5;
+  string user_id = 6;
+  string mint_reason = 7; // reward, purchase, airdrop, etc.
+}
+
+// Mint tokens response
+message MintTokensResponse {
+  string transaction_hash = 1;
+  int32 status = 2; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 3;
+  google.protobuf.Timestamp minted_at = 4;
+  string gas_used = 5;
+  string new_balance = 6;
+}
+
+// Burn tokens request
+message BurnTokensRequest {
+  string contract_address = 1;
+  string from_address = 2;
+  string amount = 3;
+  string gas_price = 4;
+  int64 gas_limit = 5;
+  string user_id = 6;
+  string burn_reason = 7; // deflation, buyback, error_correction, etc.
+}
+
+// Burn tokens response
+message BurnTokensResponse {
+  string transaction_hash = 1;
+  int32 status = 2; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 3;
+  google.protobuf.Timestamp burned_at = 4;
+  string gas_used = 5;
+  string remaining_balance = 6;
+}
+
+// Get token info request
+message GetTokenInfoRequest {
+  string contract_address = 1;
+  int64 block_number = 2; // optional, latest if not specified
+}
+
+// Get token info response
+message GetTokenInfoResponse {
+  string contract_address = 1;
+  string token_name = 2;
+  string token_symbol = 3;
+  string total_supply = 4;
+  string circulating_supply = 5;
+  int32 decimals = 6;
+  string owner_address = 7;
+  bool is_mintable = 8;
+  bool is_burnable = 9;
+  string token_description = 10;
+  string token_image_url = 11;
+  string store_id = 12;
+  google.protobuf.Timestamp created_at = 13;
+  string current_price = 14; // in USC
+  string market_cap = 15;
+}
+
+// Get token balance request
+message GetTokenBalanceRequest {
+  string contract_address = 1;
+  string wallet_address = 2;
+  int64 block_number = 3; // optional, latest if not specified
+}
+
+// Get token balance response
+message GetTokenBalanceResponse {
+  string contract_address = 1;
+  string wallet_address = 2;
+  string balance = 3;
+  string token_symbol = 4;
+  int32 decimals = 5;
+  string formatted_balance = 6;
+  int64 block_number = 7;
+  google.protobuf.Timestamp last_updated = 8;
+  string usd_value = 9; // estimated USD value
+}

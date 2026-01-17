@@ -1,0 +1,158 @@
+# Prometheus configuration for USC Social Platform
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9091']
+
+  # USC Microservices (8001-8022)
+  - job_name: 'usc-gateway'
+    static_configs:
+      - targets: ['service-01-gateway:9001']
+    scrape_interval: 5s
+
+  - job_name: 'usc-auth'
+    static_configs:
+      - targets: ['service-02-auth:9002']
+    scrape_interval: 5s
+
+  - job_name: 'usc-user'
+    static_configs:
+      - targets: ['service-03-user:9003']
+    scrape_interval: 5s
+
+  - job_name: 'usc-blockchain'
+    static_configs:
+      - targets: ['service-04-usc-blockchain-core:9004']
+    scrape_interval: 5s
+
+  - job_name: 'usc-wallet'
+    static_configs:
+      - targets: ['service-05-usc-wallet:9005']
+    scrape_interval: 5s
+
+  - job_name: 'usc-security'
+    static_configs:
+      - targets: ['service-06-security:9006']
+    scrape_interval: 5s
+
+  - job_name: 'usc-caching'
+    static_configs:
+      - targets: ['service-07-caching:9007']
+    scrape_interval: 5s
+
+  - job_name: 'usc-monitoring'
+    static_configs:
+      - targets: ['service-08-monitoring:9008']
+    scrape_interval: 5s
+
+  - job_name: 'usc-social'
+    static_configs:
+      - targets: ['service-09-social:9009']
+    scrape_interval: 5s
+
+  - job_name: 'usc-rewards'
+    static_configs:
+      - targets: ['service-10-usc-bilateral-rewards:9010']
+    scrape_interval: 5s
+
+  - job_name: 'usc-content'
+    static_configs:
+      - targets: ['service-11-content-management:9011']
+    scrape_interval: 5s
+
+  - job_name: 'usc-video'
+    static_configs:
+      - targets: ['service-12-video-service:9012']
+    scrape_interval: 5s
+
+  - job_name: 'usc-ai'
+    static_configs:
+      - targets: ['service-13-ai-service:9013']
+    scrape_interval: 5s
+
+  - job_name: 'usc-commerce'
+    static_configs:
+      - targets: ['service-14-commerce-service:9014']
+    scrape_interval: 5s
+
+  - job_name: 'usc-notification'
+    static_configs:
+      - targets: ['service-15-notification-service:9015']
+    scrape_interval: 5s
+
+  - job_name: 'usc-search'
+    static_configs:
+      - targets: ['service-16-search-service:9016']
+    scrape_interval: 5s
+
+  - job_name: 'usc-analytics'
+    static_configs:
+      - targets: ['service-17-analytics-service:9017']
+    scrape_interval: 5s
+
+  - job_name: 'usc-moderation'
+    static_configs:
+      - targets: ['service-18-moderation-service:9018']
+    scrape_interval: 5s
+
+  - job_name: 'usc-recommendation'
+    static_configs:
+      - targets: ['service-19-recommendation-service:9019']
+    scrape_interval: 5s
+
+  - job_name: 'usc-advertising'
+    static_configs:
+      - targets: ['service-20-advertising-service:9020']
+    scrape_interval: 5s
+
+  - job_name: 'usc-admin'
+    static_configs:
+      - targets: ['service-21-admin-service:9021']
+    scrape_interval: 5s
+
+  - job_name: 'usc-kafka-messaging'
+    static_configs:
+      - targets: ['service-22-kafka-messaging-service:9022']
+    scrape_interval: 5s
+
+  # Infrastructure services
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb:27017']
+
+  - job_name: 'clickhouse'
+    static_configs:
+      - targets: ['clickhouse:8123']
+
+  - job_name: 'influxdb'
+    static_configs:
+      - targets: ['influxdb:8086']
+
+  - job_name: 'quickwit'
+    static_configs:
+      - targets: ['quickwit:7280']
+
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9092']
+
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']

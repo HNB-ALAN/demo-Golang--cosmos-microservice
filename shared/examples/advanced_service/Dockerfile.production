@@ -1,0 +1,77 @@
+# Multi-stage production build for Advanced Service
+FROM golang:1.24-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod files
+COPY shared/examples/advanced_service/go.mod shared/examples/advanced_service/go.sum ./
+
+# Copy shared library
+COPY shared/ /shared
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY shared/examples/advanced_service/ .
+
+# Update go.mod and go.sum
+RUN go mod tidy
+
+# Build the application with optimizations
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -a -installsuffix cgo \
+    -ldflags='-w -s -extldflags "-static"' \
+    -o main .
+
+# Final production stage
+FROM alpine:3.19
+
+# Install runtime dependencies
+RUN apk --no-cache add \
+    ca-certificates \
+    curl \
+    tzdata \
+    && rm -rf /var/cache/apk/*
+
+# Install grpc_health_probe
+RUN GRPC_HEALTH_PROBE_VERSION=v0.4.24 && \
+    wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
+    chmod +x /bin/grpc_health_probe
+
+# Create non-root user
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
+# Create application directory
+WORKDIR /app
+
+# Copy the binary from builder stage
+COPY --from=builder /app/main .
+
+# Copy config file
+COPY --from=builder /app/config.yaml .
+
+# Create SSL directory
+RUN mkdir -p /etc/ssl/certs /etc/ssl/private && \
+    chown -R appuser:appgroup /etc/ssl
+
+# Change ownership to non-root user
+RUN chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose ports
+EXPOSE 9091 8081
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD grpc_health_probe -addr=:9091 || exit 1
+
+# Run the application
+CMD ["./main"]

@@ -1,0 +1,76 @@
+groups:
+  - name: service-04-usc-blockchain-core_critical
+    interval: 30s
+    rules:
+      - alert: USC BlockchainDown
+        expr: up{job="service-04-usc-blockchain-core"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: blockchain
+        annotations:
+          summary: "USC Blockchain service is down"
+          description: "USC Blockchain service has been down for more than 30 seconds. Immediate action required."
+          runbook_url: "https://docs.usc-platform.com/runbooks/service-04-usc-blockchain-core-down"
+
+      - alert: USC BlockchainHighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            rate(blockchain_request_duration_seconds_bucket[5m])
+          ) > 0.15
+        for: 5m
+        labels:
+          severity: warning
+          service: blockchain
+        annotations:
+          summary: "USC Blockchain high latency detected"
+          description: "USC Blockchain p95 latency exceeds 0.15s for 5 minutes."
+          runbook_url: "https://docs.usc-platform.com/runbooks/service-04-usc-blockchain-core-high-latency"
+
+      - alert: USC BlockchainHighErrorRate
+        expr: |
+          (
+            sum(rate(blockchain_errors_total[2m]))
+            /
+            sum(rate(blockchain_requests_total[2m]))
+          ) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+          service: blockchain
+        annotations:
+          summary: "USC Blockchain high error rate detected"
+          description: "USC Blockchain error rate exceeds 1% for 2 minutes. Current error rate: {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.usc-platform.com/runbooks/service-04-usc-blockchain-core-high-error-rate"
+
+  - name: service-04-usc-blockchain-core_availability
+    interval: 30s
+    rules:
+      - alert: USC BlockchainUptimeBelowTarget
+        expr: |
+          (
+            count(up{job="service-04-usc-blockchain-core"} == 1) / count(up{job="service-04-usc-blockchain-core"})
+          ) < 0.999
+        for: 5m
+        labels:
+          severity: critical
+          service: blockchain
+        annotations:
+          summary: "USC Blockchain uptime below 99.9% target"
+          description: "USC Blockchain uptime is below 99.9% target for 5 minutes. Current uptime: {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.usc-platform.com/runbooks/service-04-usc-blockchain-core-uptime"
+
+  - name: service-04-usc-blockchain-core_performance
+    interval: 1m
+    rules:
+      - alert: USC BlockchainLowRequestRate
+        expr: |
+          sum(rate(blockchain_requests_total[5m])) < 1
+        for: 10m
+        labels:
+          severity: info
+          service: blockchain
+        annotations:
+          summary: "USC Blockchain request rate is very low"
+          description: "USC Blockchain is receiving less than 1 request per second for 10 minutes. Possible service degradation."
+

@@ -1,0 +1,10 @@
+# BigQuery Credentials
+credentials/service-account-key.json
+
+# Docker volumes
+data/
+logs/
+
+# Temporary files
+*.tmp
+*.log

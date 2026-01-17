@@ -1,0 +1,170 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+
+// Validator operations service for PoS consensus management
+service ValidatorOperationsService {
+  // Register as validator
+  rpc RegisterValidator(RegisterValidatorRequest) returns (RegisterValidatorResponse);
+  
+  // Active validators list
+  rpc GetValidators(GetValidatorsRequest) returns (GetValidatorsResponse);
+  
+  // Validator performance monitoring
+  rpc GetValidatorStatus(GetValidatorStatusRequest) returns (GetValidatorStatusResponse);
+  
+  // Stake USC for staking features
+  rpc StakeUSC(StakeUSCRequest) returns (StakeUSCResponse);
+  
+  // Unstake USC
+  rpc UnstakeUSC(UnstakeUSCRequest) returns (UnstakeUSCResponse);
+}
+
+// Register validator request
+message RegisterValidatorRequest {
+  string validator_address = 1;
+  string validator_name = 2;
+  string description = 3;
+  string website_url = 4;
+  string logo_url = 5;
+  string commission_rate = 6; // percentage
+  string min_delegation = 7;
+  string validator_public_key = 8;
+  string user_id = 9;
+}
+
+// Register validator response
+message RegisterValidatorResponse {
+  bool success = 1;
+  string validator_id = 2;
+  string validator_address = 3;
+  string error_message = 4;
+  google.protobuf.Timestamp registered_at = 5;
+  string transaction_hash = 6;
+  int32 error_code = 7;
+}
+
+// Get validators request
+message GetValidatorsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+  string status = 3; // all, active, inactive, jailed
+  string sort_by = 4; // stake, uptime, commission, name
+  string sort_order = 5; // asc, desc
+}
+
+// Get validators response
+message GetValidatorsResponse {
+  repeated ValidatorInfo validators = 1;
+  int32 total_count = 2;
+  bool has_more = 3;
+  int32 next_offset = 4;
+  int32 active_count = 5;
+  int32 inactive_count = 6;
+  int32 jailed_count = 7;
+}
+
+// Get validator status request
+message GetValidatorStatusRequest {
+  string validator_address = 1;
+  string validator_id = 2;
+}
+
+// Get validator status response
+message GetValidatorStatusResponse {
+  bool success = 1;
+  ValidatorInfo validator = 2;
+  ValidatorPerformance performance = 3;
+  string error_message = 4;
+  int32 error_code = 5;
+}
+
+// Stake USC request
+message StakeUSCRequest {
+  string delegator_address = 1;
+  string validator_address = 2;
+  string stake_amount = 3;
+  string gas_price = 4;
+  int64 gas_limit = 5;
+  string user_id = 6;
+  string device_id = 7;
+}
+
+// Stake USC response
+message StakeUSCResponse {
+  bool success = 1;
+  string transaction_hash = 2;
+  int32 status = 3; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 4;
+  google.protobuf.Timestamp staked_at = 5;
+  string gas_used = 6;
+  string new_stake_balance = 7;
+  int32 error_code = 8;
+}
+
+// Unstake USC request
+message UnstakeUSCRequest {
+  string delegator_address = 1;
+  string validator_address = 2;
+  string unstake_amount = 3;
+  string gas_price = 4;
+  int64 gas_limit = 5;
+  string user_id = 6;
+  string device_id = 7;
+}
+
+// Unstake USC response
+message UnstakeUSCResponse {
+  bool success = 1;
+  string transaction_hash = 2;
+  int32 status = 3; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 4;
+  google.protobuf.Timestamp unstaked_at = 5;
+  string gas_used = 6;
+  string unlock_time = 7; // when USC will be available
+  int32 error_code = 8;
+}
+
+// Validator information
+message ValidatorInfo {
+  string validator_id = 1;
+  string validator_address = 2;
+  string validator_name = 3;
+  string description = 4;
+  string website_url = 5;
+  string logo_url = 6;
+  string commission_rate = 7;
+  string min_delegation = 8;
+  string status = 9; // active, inactive, jailed
+  string stake_amount = 10;
+  string delegated_amount = 11;
+  string uptime_percentage = 12;
+  int64 blocks_proposed = 13;
+  int64 blocks_missed = 14;
+  string rewards_earned = 15;
+  string jail_reason = 16;
+  google.protobuf.Timestamp jailed_until = 17;
+  google.protobuf.Timestamp created_at = 18;
+  google.protobuf.Timestamp last_active_at = 19;
+}
+
+// Validator performance metrics
+message ValidatorPerformance {
+  string uptime_percentage = 1;
+  int64 blocks_proposed = 2;
+  int64 blocks_missed = 3;
+  string rewards_earned = 4;
+  string commission_rate = 5;
+  string total_stake = 6;
+  string delegated_stake = 7;
+  string self_stake = 8;
+  string voting_power = 9;
+  string rank = 10;
+  string performance_score = 11;
+  google.protobuf.Timestamp last_block_time = 12;
+  string consensus_participation = 13;
+}

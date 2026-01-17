@@ -1,0 +1,107 @@
+syntax = "proto3";
+package usc_coin.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/usc_coin/types";
+
+// MsgTransferUSC defines a message for transferring USC tokens
+message MsgTransferUSC {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string from_address = 1;
+  string to_address = 2;
+  cosmos.base.v1beta1.Coin amount = 3 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin fee = 4 [(gogoproto.nullable) = false];
+  uint64 gas_limit = 5;
+  uint64 nonce = 6;
+  string memo = 7;
+}
+
+// MsgTransferUSCResponse defines the response for MsgTransferUSC
+message MsgTransferUSCResponse {
+  bool success = 1;
+  string transaction_hash = 2;
+}
+
+// MsgMintUSC defines a message for minting USC tokens
+message MsgMintUSC {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string minter = 1;
+  cosmos.base.v1beta1.Coin amount = 2 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin fee = 3 [(gogoproto.nullable) = false];
+  uint64 gas_limit = 4;
+  uint64 nonce = 5;
+  string memo = 6;
+}
+
+// MsgMintUSCResponse defines the response for MsgMintUSC
+message MsgMintUSCResponse {
+  bool success = 1;
+  string transaction_hash = 2;
+}
+
+// MsgBurnUSC defines a message for burning USC tokens
+message MsgBurnUSC {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string burner = 1;
+  cosmos.base.v1beta1.Coin amount = 2 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin fee = 3 [(gogoproto.nullable) = false];
+  uint64 gas_limit = 4;
+  uint64 nonce = 5;
+  string memo = 6;
+}
+
+// MsgBurnUSCResponse defines the response for MsgBurnUSC
+message MsgBurnUSCResponse {
+  bool success = 1;
+  string transaction_hash = 2;
+}
+
+// QueryUSCBalanceRequest defines the request for querying USC balance
+message QueryUSCBalanceRequest {
+  string address = 1;
+}
+
+// QueryUSCBalanceResponse defines the response for querying USC balance
+message QueryUSCBalanceResponse {
+  cosmos.base.v1beta1.Coin balance = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryUSCSupplyRequest defines the request for querying USC supply
+message QueryUSCSupplyRequest {}
+
+// QueryUSCSupplyResponse defines the response for querying USC supply
+message QueryUSCSupplyResponse {
+  cosmos.base.v1beta1.Coin supply = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryUSCHoldersRequest defines the request for querying USC holders
+message QueryUSCHoldersRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryUSCHoldersResponse defines the response for querying USC holders
+message QueryUSCHoldersResponse {
+  repeated USCHolder holders = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// USCHolder represents a USC token holder
+message USCHolder {
+  string address = 1;
+  cosmos.base.v1beta1.Coin balance = 2 [(gogoproto.nullable) = false];
+  uint64 transaction_count = 3;
+  google.protobuf.Timestamp last_transaction_time = 4 [(gogoproto.nullable) = false];
+  uint64 nonce = 5;
+  cosmos.base.v1beta1.Coin total_fees_paid = 6 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp created_at = 7 [(gogoproto.nullable) = false];
+}

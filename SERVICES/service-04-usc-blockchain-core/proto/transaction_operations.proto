@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+
+// Transaction operations service for USC transaction processing
+service TransactionOperationsService {
+  // Submit USC transactions
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
+  
+  // Transaction details
+  rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse);
+  
+  // Check transaction state
+  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusResponse);
+  
+  // Mempool transactions
+  rpc GetPendingTransactions(GetPendingTransactionsRequest) returns (GetPendingTransactionsResponse);
+  
+  // Gas fee calculation
+  rpc EstimateTransactionFee(EstimateTransactionFeeRequest) returns (EstimateTransactionFeeResponse);
+}
+
+// Submit transaction request
+message SubmitTransactionRequest {
+  string from_address = 1;
+  string to_address = 2;
+  string amount = 3;
+  string gas_price = 4;
+  int64 gas_limit = 5;
+  string data = 6;
+  int64 nonce = 7;
+  string signature = 8;
+  string user_id = 9;
+  string device_id = 10;
+}
+
+// Submit transaction response
+message SubmitTransactionResponse {
+  string transaction_hash = 1;
+  int32 status = 2; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 3;
+  google.protobuf.Timestamp submitted_at = 4;
+  int64 estimated_confirmation_time = 5;
+}
+
+// Get transaction request
+message GetTransactionRequest {
+  string transaction_hash = 1;
+  bool include_receipt = 2;
+}
+
+// Get transaction response
+message GetTransactionResponse {
+  string transaction_hash = 1;
+  string from_address = 2;
+  string to_address = 3;
+  string amount = 4;
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  int64 gas_used = 7;
+  string data = 8;
+  int64 nonce = 9;
+  string signature = 10;
+  int32 status = 11;
+  int64 block_number = 12;
+  string block_hash = 13;
+  int64 transaction_index = 14;
+  google.protobuf.Timestamp created_at = 15;
+  google.protobuf.Timestamp confirmed_at = 16;
+  TransactionReceipt receipt = 17;
+}
+
+// Get transaction status request
+message GetTransactionStatusRequest {
+  string transaction_hash = 1;
+}
+
+// Get transaction status response
+message GetTransactionStatusResponse {
+  string transaction_hash = 1;
+  int32 status = 2; // 0=Pending, 1=Confirmed, 2=Failed, 3=Dropped
+  int64 confirmations = 3;
+  int64 block_number = 4;
+  string block_hash = 5;
+  google.protobuf.Timestamp confirmed_at = 6;
+  string error_message = 7;
+}
+
+// Get pending transactions request
+message GetPendingTransactionsRequest {
+  string address = 1; // optional filter by address
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+// Get pending transactions response
+message GetPendingTransactionsResponse {
+  repeated PendingTransaction transactions = 1;
+  int32 total_count = 2;
+  bool has_more = 3;
+}
+
+// Estimate transaction fee request
+message EstimateTransactionFeeRequest {
+  string from_address = 1;
+  string to_address = 2;
+  string amount = 3;
+  string data = 4;
+  int64 gas_limit = 5;
+}
+
+// Estimate transaction fee response
+message EstimateTransactionFeeResponse {
+  string gas_price = 1;
+  int64 gas_limit = 2;
+  string total_fee = 3;
+  string usc_fee = 4;
+  int64 estimated_confirmation_time = 5;
+  string priority_fee = 6;
+}
+
+// Pending transaction
+message PendingTransaction {
+  string transaction_hash = 1;
+  string from_address = 2;
+  string to_address = 3;
+  string amount = 4;
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  google.protobuf.Timestamp submitted_at = 7;
+  int64 priority = 8;
+}
+
+// Transaction receipt
+message TransactionReceipt {
+  string transaction_hash = 1;
+  int32 status = 2;
+  int64 gas_used = 3;
+  string contract_address = 4;
+  repeated TransactionLog logs = 5;
+  string logs_bloom = 6;
+  int64 block_number = 7;
+  string block_hash = 8;
+}
+
+// Transaction Log entry
+message TransactionLog {
+  string address = 1;
+  repeated string topics = 2;
+  string data = 3;
+  int64 log_index = 4;
+  int64 transaction_index = 5;
+  string transaction_hash = 6;
+  int64 block_number = 7;
+  string block_hash = 8;
+}

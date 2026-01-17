@@ -1,0 +1,253 @@
+syntax = "proto3";
+package network.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/network/types";
+
+// ConsensusParams represents consensus parameters
+message ConsensusParams {
+  string consensus_type = 1;
+  int64 block_time = 2;
+  int64 max_validators = 3;
+  int64 min_validators = 4;
+  double threshold = 5;
+  map<string, string> params = 6;
+}
+
+// NetworkTopology represents network topology information
+message NetworkTopology {
+  repeated string peer_nodes = 1;
+  repeated string validator_nodes = 2;
+  string network_id = 3;
+  int64 total_connections = 4;
+  int64 max_connections = 5;
+  map<string, string> routing_table = 6;
+}
+
+// NodeInfo represents structured node information
+message NodeInfo {
+  string version = 1;
+  string platform = 2;
+  string capabilities = 3;
+  int64 uptime = 4;
+  string location = 5;
+  map<string, string> metadata = 6;
+}
+
+// UpdateType defines the type of network update
+enum UpdateType {
+  UPDATE_TYPE_UNSPECIFIED = 0;
+  UPDATE_TYPE_CONSENSUS = 1;
+  UPDATE_TYPE_ROUTING = 2;
+  UPDATE_TYPE_SECURITY = 3;
+  UPDATE_TYPE_PERFORMANCE = 4;
+}
+
+// SyncType defines the type of network synchronization
+enum SyncType {
+  SYNC_TYPE_UNSPECIFIED = 0;
+  SYNC_TYPE_FULL = 1;
+  SYNC_TYPE_INCREMENTAL = 2;
+  SYNC_TYPE_STATE = 3;
+  SYNC_TYPE_BLOCK = 4;
+}
+
+// SyncStatus defines the status of a sync operation
+enum SyncStatus {
+  SYNC_STATUS_UNSPECIFIED = 0;
+  SYNC_STATUS_PENDING = 1;
+  SYNC_STATUS_IN_PROGRESS = 2;
+  SYNC_STATUS_COMPLETED = 3;
+  SYNC_STATUS_FAILED = 4;
+}
+
+// NodeStatus defines the status of a network node
+enum NodeStatus {
+  NODE_STATUS_UNSPECIFIED = 0;
+  NODE_STATUS_ACTIVE = 1;
+  NODE_STATUS_INACTIVE = 2;
+  NODE_STATUS_MAINTENANCE = 3;
+  NODE_STATUS_OFFLINE = 4;
+}
+
+// NodeType defines the type of network node
+enum NodeType {
+  NODE_TYPE_UNSPECIFIED = 0;
+  NODE_TYPE_VALIDATOR = 1;
+  NODE_TYPE_FULL_NODE = 2;
+  NODE_TYPE_LIGHT_NODE = 3;
+  NODE_TYPE_ARCHIVE_NODE = 4;
+}
+
+// MsgJoinNetwork defines a message for joining the USC network
+message MsgJoinNetwork {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string joiner = 1;
+  string node_id = 2;
+  string node_address = 3;
+  NodeType node_type = 4;
+  string network_id = 5;
+  string memo = 6;
+}
+
+// MsgJoinNetworkResponse defines the response for MsgJoinNetwork
+message MsgJoinNetworkResponse {
+  bool success = 1;
+  string connection_id = 2;
+  string network_membership_id = 3;
+  string transaction_hash = 4;
+}
+
+// MsgLeaveNetwork defines a message for leaving the USC network
+message MsgLeaveNetwork {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string leaver = 1;
+  string node_id = 2;
+  string network_id = 3;
+  string leave_reason = 4;
+  string memo = 5;
+}
+
+// MsgLeaveNetworkResponse defines the response for MsgLeaveNetwork
+message MsgLeaveNetworkResponse {
+  bool success = 1;
+  string leave_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgUpdateNetwork defines a message for updating network configuration
+message MsgUpdateNetwork {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string updater = 1;
+  string network_id = 2;
+  ConsensusParams consensus_params = 3 [(gogoproto.nullable) = false];
+  NetworkTopology network_topology = 4 [(gogoproto.nullable) = false];
+  UpdateType update_type = 5;
+  string memo = 6;
+}
+
+// MsgUpdateNetworkResponse defines the response for MsgUpdateNetwork
+message MsgUpdateNetworkResponse {
+  bool success = 1;
+  string update_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgSyncNetwork defines a message for network synchronization
+message MsgSyncNetwork {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string syncer = 1;
+  string node_id = 2;
+  SyncType sync_type = 3;
+  map<string, string> sync_params = 4;
+  string memo = 5;
+}
+
+// MsgSyncNetworkResponse defines the response for MsgSyncNetwork
+message MsgSyncNetworkResponse {
+  bool success = 1;
+  string sync_id = 2;
+  SyncStatus sync_status = 3;
+  string transaction_hash = 4;
+}
+
+// QueryNetworkRequest defines the request for querying network information
+message QueryNetworkRequest {
+  string network_id = 1;
+}
+
+// QueryNetworkResponse defines the response for querying network information
+message QueryNetworkResponse {
+  Network network = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryNetworksRequest defines the request for querying multiple networks
+message QueryNetworksRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  NodeStatus status = 2;
+}
+
+// QueryNetworksResponse defines the response for querying multiple networks
+message QueryNetworksResponse {
+  repeated Network networks = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryNetworkNodesRequest defines the request for querying network nodes
+message QueryNetworkNodesRequest {
+  string network_id = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+  NodeType node_type = 3;
+  NodeStatus status = 4;
+}
+
+// QueryNetworkNodesResponse defines the response for querying network nodes
+message QueryNetworkNodesResponse {
+  repeated NetworkNode nodes = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryNetworkStatsRequest defines the request for querying network statistics
+message QueryNetworkStatsRequest {
+  string network_id = 1;
+}
+
+// QueryNetworkStatsResponse defines the response for querying network statistics
+message QueryNetworkStatsResponse {
+  NetworkStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// Network represents a USC network
+message Network {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  NodeStatus status = 4;
+  ConsensusParams consensus_params = 5 [(gogoproto.nullable) = false];
+  NetworkTopology network_topology = 6 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp created_at = 7 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp updated_at = 8 [(gogoproto.nullable) = false];
+  int64 total_nodes = 9;
+  int64 active_nodes = 10;
+  google.protobuf.Timestamp last_sync_time = 11 [(gogoproto.nullable) = false];
+  string memo = 12;
+}
+
+// NetworkNode represents a network node
+message NetworkNode {
+  string id = 1;
+  string network_id = 2;
+  string node_address = 3;
+  NodeType node_type = 4;
+  NodeStatus status = 5;
+  google.protobuf.Timestamp joined_at = 6 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp last_activity = 7 [(gogoproto.nullable) = false];
+  SyncStatus sync_status = 8;
+  int64 block_height = 9;
+  NodeInfo node_info = 10 [(gogoproto.nullable) = false];
+  string memo = 11;
+}
+
+// NetworkStats represents network statistics
+message NetworkStats {
+  int64 total_networks = 1;
+  int64 active_networks = 2;
+  int64 total_nodes = 3;
+  int64 active_nodes = 4;
+  int64 average_nodes_per_network = 5;
+  int64 total_sync_operations = 6;
+  int64 average_sync_time_seconds = 7;
+  string most_active_network = 8;
+  google.protobuf.Timestamp last_network_activity = 9 [(gogoproto.nullable) = false];
+}

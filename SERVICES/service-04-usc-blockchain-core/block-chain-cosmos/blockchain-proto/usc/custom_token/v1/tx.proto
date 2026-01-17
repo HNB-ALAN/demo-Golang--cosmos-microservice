@@ -1,0 +1,265 @@
+syntax = "proto3";
+package token.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/custom_token/types";
+
+// TokenMetadata represents structured token metadata
+message TokenMetadata {
+  string image_uri = 1;
+  string external_uri = 2;
+  string website = 3;
+  string documentation = 4;
+  map<string, string> attributes = 5;
+  string notes = 6;
+}
+
+// TokenType defines the type of custom token
+enum TokenType {
+  TOKEN_TYPE_UNSPECIFIED = 0;
+  TOKEN_TYPE_FUNGIBLE = 1;
+  TOKEN_TYPE_SEMI_FUNGIBLE = 2;
+  TOKEN_TYPE_UTILITY = 3;
+  TOKEN_TYPE_GOVERNANCE = 4;
+}
+
+// TokenStatus defines the lifecycle state of a custom token
+enum TokenStatus {
+  TOKEN_STATUS_UNSPECIFIED = 0;
+  TOKEN_STATUS_ACTIVE = 1;
+  TOKEN_STATUS_PAUSED = 2;
+  TOKEN_STATUS_BURNED = 3;
+}
+
+// MsgCreateToken defines a message for creating a custom token
+message MsgCreateToken {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string creator = 1;
+  string token_name = 2;
+  string token_symbol = 3;
+  string token_description = 4;
+  TokenMetadata token_metadata = 5 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin initial_supply = 6 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin max_supply = 7 [(gogoproto.nullable) = false];
+  int32 decimals = 8;
+  TokenType token_type = 9;
+  string mint_authority = 10;
+  string freeze_authority = 11;
+  cosmos.base.v1beta1.Coin creation_fee = 12 [(gogoproto.nullable) = false];
+  string memo = 13;
+}
+
+// MsgCreateTokenResponse defines the response for MsgCreateToken
+message MsgCreateTokenResponse {
+  bool success = 1;
+  string token_id = 2;
+  string token_address = 3;
+  string creation_hash = 4;
+  string transaction_hash = 5;
+}
+
+// MsgMintToken defines a message for minting custom tokens
+message MsgMintToken {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string minter = 1;
+  string token_id = 2;
+  string recipient = 3;
+  cosmos.base.v1beta1.Coin mint_amount = 4 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin minting_fee = 5 [(gogoproto.nullable) = false];
+  string memo = 6;
+}
+
+// MsgMintTokenResponse defines the response for MsgMintToken
+message MsgMintTokenResponse {
+  bool success = 1;
+  string minting_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgBurnToken defines a message for burning custom tokens
+message MsgBurnToken {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string burner = 1;
+  string token_id = 2;
+  cosmos.base.v1beta1.Coin burn_amount = 3 [(gogoproto.nullable) = false];
+  string burn_reason = 4;
+  string memo = 5;
+}
+
+// MsgBurnTokenResponse defines the response for MsgBurnToken
+message MsgBurnTokenResponse {
+  bool success = 1;
+  string burn_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgTransferToken defines a message for transferring custom tokens
+message MsgTransferToken {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string sender = 1;
+  string recipient = 2;
+  string token_id = 3;
+  cosmos.base.v1beta1.Coin transfer_amount = 4 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin transfer_fee = 5 [(gogoproto.nullable) = false];
+  string memo = 6;
+}
+
+// MsgTransferTokenResponse defines the response for MsgTransferToken
+message MsgTransferTokenResponse {
+  bool success = 1;
+  string transfer_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgUpdateToken defines a message for updating token information
+message MsgUpdateToken {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string updater = 1;
+  string token_id = 2;
+  string new_name = 3;
+  string new_description = 4;
+  TokenMetadata new_metadata = 5 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin new_max_supply = 6 [(gogoproto.nullable) = false];
+  string new_mint_authority = 7;
+  string new_freeze_authority = 8;
+  string memo = 9;
+}
+
+// MsgUpdateTokenResponse defines the response for MsgUpdateToken
+message MsgUpdateTokenResponse {
+  bool success = 1;
+  string update_hash = 2;
+  string transaction_hash = 3;
+}
+
+// QueryTokenRequest defines the request for querying a token
+message QueryTokenRequest {
+  string token_id = 1;
+}
+
+// QueryTokenResponse defines the response for querying a token
+message QueryTokenResponse {
+  CustomToken token = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryTokensRequest defines the request for querying multiple tokens
+message QueryTokensRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  string creator = 2;
+  TokenType token_type = 3;
+  TokenStatus status = 4;
+}
+
+// QueryTokensResponse defines the response for querying multiple tokens
+message QueryTokensResponse {
+  repeated CustomToken tokens = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryTokenBalanceRequest defines the request for querying token balance
+message QueryTokenBalanceRequest {
+  string token_id = 1;
+  string holder = 2;
+}
+
+// QueryTokenBalanceResponse defines the response for querying token balance
+message QueryTokenBalanceResponse {
+  TokenBalance balance = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryTokenHoldersRequest defines the request for querying token holders
+message QueryTokenHoldersRequest {
+  string token_id = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryTokenHoldersResponse defines the response for querying token holders
+message QueryTokenHoldersResponse {
+  repeated TokenHolder holders = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryTokenStatsRequest defines the request for querying token statistics
+message QueryTokenStatsRequest {
+  string token_id = 1;
+}
+
+// QueryTokenStatsResponse defines the response for querying token statistics
+message QueryTokenStatsResponse {
+  TokenStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// CustomToken represents a custom token
+message CustomToken {
+  string id = 1;
+  string address = 2;
+  string creator = 3;
+  string name = 4;
+  string symbol = 5;
+  string description = 6;
+  TokenMetadata metadata = 7 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin current_supply = 8 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin max_supply = 9 [(gogoproto.nullable) = false];
+  int32 decimals = 10;
+  TokenType token_type = 11;
+  TokenStatus status = 12;
+  string mint_authority = 13;
+  string freeze_authority = 14;
+  google.protobuf.Timestamp created_at = 15 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp updated_at = 16 [(gogoproto.nullable) = false];
+  int64 total_minted = 17;
+  int64 total_burned = 18;
+  int64 total_transfers = 19;
+  int64 holder_count = 20;
+  string memo = 21;
+}
+
+// TokenBalance represents a token balance
+message TokenBalance {
+  string token_id = 1;
+  string holder = 2;
+  cosmos.base.v1beta1.Coin balance = 3 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin locked_balance = 4 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin available_balance = 5 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp last_updated = 6 [(gogoproto.nullable) = false];
+}
+
+// TokenHolder represents a token holder
+message TokenHolder {
+  string holder = 1;
+  string token_id = 2;
+  cosmos.base.v1beta1.Coin balance = 3 [(gogoproto.nullable) = false];
+  double percentage = 4;
+  google.protobuf.Timestamp first_acquired = 5 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp last_activity = 6 [(gogoproto.nullable) = false];
+  int64 transaction_count = 7;
+}
+
+// TokenStats represents token statistics
+message TokenStats {
+  int64 total_tokens = 1;
+  int64 active_tokens = 2;
+  int64 paused_tokens = 3;
+  int64 burned_tokens = 4;
+  cosmos.base.v1beta1.Coin total_supply = 5 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin total_minted = 6 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin total_burned = 7 [(gogoproto.nullable) = false];
+  int64 total_transfers = 8;
+  int64 total_holders = 9;
+  string most_active_token = 10;
+  google.protobuf.Timestamp last_activity = 11 [(gogoproto.nullable) = false];
+}

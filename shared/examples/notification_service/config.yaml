@@ -1,0 +1,147 @@
+# Notification Service Configuration
+service:
+  name: "notification-service"
+  version: "1.0.0"
+  environment: "production"
+  region: "us-east-1"
+  instance: "default"
+
+server:
+  host: "0.0.0.0"
+  port: "8083"
+  tls: true
+  grpc:
+    max_recv_msg_size: 4194304
+    max_send_msg_size: 4194304
+    keep_alive: true
+  http:
+    read_timeout: 30
+    write_timeout: 30
+    idle_timeout: 120
+
+database:
+  host: "postgres"
+  port: 5432
+  user: "usc_user"
+  password: "your-secure-postgres-password"
+  dbname: "usc_production"
+  sslmode: "require"
+  sslcert: "/etc/ssl/certs/postgres.crt"
+  sslkey: "/etc/ssl/certs/postgres.key"
+  sslrootcert: "/etc/ssl/certs/postgres.crt"
+  max_conns: 100
+  min_conns: 10
+
+redis:
+  host: "redis"
+  port: 6379
+  password: "your-secure-redis-password"
+  db: 0
+  pool_size: 50
+
+clickhouse:
+  host: "clickhouse"
+  port: 9000
+  user: "usc_user"
+  password: "your-secure-clickhouse-password"
+  dbname: "usc_analytics"
+  secure: true
+
+influxdb:
+  host: "influxdb"
+  port: 8086
+  token: "your-secure-influxdb-token"
+  org: "usc"
+  bucket: "production_metrics"
+
+quickwit:
+  host: "quickwit"
+  port: 7280
+  user: "elastic"
+  password: "your-secure-quickwit-password"
+  index: "usc_production"
+
+log:
+  level: "info"
+  format: "json"
+  output: "stdout"
+  filename: ""
+  max_size: 100
+  max_age: 30
+  compress: true
+
+metrics:
+  enabled: true
+  port: 9092
+  path: "/metrics"
+
+auth:
+  jwt_secret: "your-super-secure-jwt-secret-key-must-be-at-least-32-characters-long-for-production"
+  jwt_expiry: "1h"
+  refresh_expiry: "24h"
+  issuer: "usc-platform"
+
+cache:
+  ttl: 3600
+  max_size: 10000
+  enabled: true
+
+health:
+  enabled: true
+  port: 8081
+  path: "/health"
+  interval: "30s"
+  timeout: "5s"
+
+# Notification-specific configuration
+notifications:
+  # Email Configuration
+  email:
+    smtp_host: "smtp.your-provider.com"
+    smtp_port: 587
+    smtp_user: "your-smtp-user"
+    smtp_password: "your-smtp-password"
+    from_email: "noreply@usc-platform.com"
+    from_name: "USC Platform"
+    templates_path: "./templates/email"
+    
+  # SMS Configuration
+  sms:
+    provider: "twilio"
+    account_sid: "your-twilio-account-sid"
+    auth_token: "your-twilio-auth-token"
+    from_number: "+1234567890"
+    api_url: "https://api.twilio.com/2010-04-01"
+    
+  # Push Notification Configuration
+  push:
+    fcm_server_key: "your-fcm-server-key"
+    apns_cert_path: "/etc/ssl/certs/apns.pem"
+    apns_key_path: "/etc/ssl/private/apns.key"
+    apns_topic: "com.usc.platform"
+    
+  # In-App Notification Configuration
+  in_app:
+    enabled: true
+    max_per_user: 100
+    cleanup_interval: "24h"
+    
+  # Webhook Configuration
+  webhook:
+    timeout: "30s"
+    retry_count: 3
+    retry_delay: "5s"
+    secret_key: ""
+    
+  # Rate Limiting
+  rate_limit:
+    enabled: true
+    requests_per_minute: 1000
+    burst: 100
+    
+  # Batch Processing
+  batch:
+    enabled: true
+    size: 100
+    interval: "5s"
+    max_wait: "30s"

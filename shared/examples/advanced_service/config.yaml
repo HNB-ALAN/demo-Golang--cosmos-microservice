@@ -1,0 +1,95 @@
+# Advanced Service Configuration
+service:
+  name: "advanced-service"
+  version: "1.0.0"
+  environment: "production"
+  region: "us-east-1"
+  instance: "default"
+
+server:
+  host: "0.0.0.0"
+  port: "9091"
+  tls: true
+  grpc:
+    max_recv_msg_size: 4194304
+    max_send_msg_size: 4194304
+    keep_alive: true
+  http:
+    read_timeout: 30
+    write_timeout: 30
+    idle_timeout: 120
+
+database:
+  host: "postgres"
+  port: 5432
+  user: "usc_user"
+  password: "your-secure-postgres-password"
+  dbname: "usc_production"
+  sslmode: "require"
+  sslcert: "/etc/ssl/certs/postgres.crt"
+  sslkey: "/etc/ssl/certs/postgres.key"
+  sslrootcert: "/etc/ssl/certs/postgres.crt"
+  max_conns: 100
+  min_conns: 10
+
+redis:
+  host: "redis"
+  port: 6379
+  password: "your-secure-redis-password"
+  db: 0
+  pool_size: 50
+
+
+clickhouse:
+  host: "clickhouse"
+  port: 9000
+  user: "usc_user"
+  password: "your-secure-clickhouse-password"
+  dbname: "usc_analytics"
+  secure: true
+
+influxdb:
+  host: "influxdb"
+  port: 8086
+  token: "your-secure-influxdb-token"
+  org: "usc"
+  bucket: "production_metrics"
+
+quickwit:
+  host: "quickwit"
+  port: 7280
+  user: "elastic"
+  password: "your-secure-quickwit-password"
+  index: "usc_production"
+
+log:
+  level: "info"
+  format: "json"
+  output: "stdout"
+  filename: ""
+  max_size: 100
+  max_age: 30
+  compress: true
+
+metrics:
+  enabled: true
+  port: 9091
+  path: "/metrics"
+
+auth:
+  jwt_secret: "your-super-secure-jwt-secret-key-must-be-at-least-32-characters-long-for-production"
+  jwt_expiry: "1h"
+  refresh_expiry: "24h"
+  issuer: "usc-platform"
+
+cache:
+  ttl: 3600
+  max_size: 10000
+  enabled: true
+
+health:
+  enabled: true
+  port: 8081
+  path: "/health"
+  interval: "30s"
+  timeout: "5s"

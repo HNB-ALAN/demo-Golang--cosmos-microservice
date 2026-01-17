@@ -1,0 +1,54 @@
+# USC Blockchain Configuration
+# Unified configuration file for Standalone ABCI Server mode
+# NOTE: app.toml and client.toml sections are for reference only - not actively read by code
+
+# ============================================================================
+# CHAIN CONFIGURATION
+# ============================================================================
+chain_id = "usc-1"
+moniker = "usc-node"
+
+# ============================================================================
+# NETWORK CONFIGURATION (CometBFT)
+# ============================================================================
+p2p_address = "tcp://0.0.0.0:26656"
+rpc_address = "tcp://0.0.0.0:26657"
+# NOTE: api_address and grpc_address not used in Standalone ABCI Server mode
+# API/GRPC are handled by CometBFT RPC (port 26657)
+
+# ============================================================================
+# DATABASE CONFIGURATION
+# ============================================================================
+# NOTE: Service exclusively uses RocksDB - goleveldb not supported
+db_backend = "rocksdb"
+db_dir = "data"
+
+# ============================================================================
+# LOGGING CONFIGURATION
+# ============================================================================
+# Used by root.go
+log_level = "info"
+log_format = "json"
+
+# ============================================================================
+# GENESIS CONFIGURATION
+# ============================================================================
+genesis_file = "config/genesis.json"
+
+# ============================================================================
+# APPLICATION CONFIGURATION (Reference Only)
+# ============================================================================
+[app]
+name = "usc-blockchain"
+version = "1.0.0"
+chain_id = "usc-1"  # Must match genesis.json chain_id
+
+# ============================================================================
+# CLIENT CONFIGURATION (Reference Only)
+# ============================================================================
+[client]
+chain_id = "usc-1"  # Must match genesis.json chain_id
+keyring_backend = "os"
+output = "json"
+node = "tcp://localhost:26657"
+broadcast_mode = "sync"

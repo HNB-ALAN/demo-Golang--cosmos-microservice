@@ -1,0 +1,203 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+
+// NFT token operations service for NFT marketplace functionality
+service NFTTokenOperationsService {
+  // Deploy NFT contracts
+  rpc DeployNFTContract(DeployNFTContractRequest) returns (DeployNFTContractResponse);
+  
+  // Create NFT collections
+  rpc CreateNFTCollection(CreateNFTCollectionRequest) returns (CreateNFTCollectionResponse);
+  
+  // Create new NFTs
+  rpc MintNFT(MintNFTRequest) returns (MintNFTResponse);
+  
+  // Transfer NFT ownership
+  rpc TransferNFT(TransferNFTRequest) returns (TransferNFTResponse);
+  
+  // Destroy NFTs
+  rpc BurnNFT(BurnNFTRequest) returns (BurnNFTResponse);
+  
+  // NFT metadata
+  rpc GetNFTInfo(GetNFTInfoRequest) returns (GetNFTInfoResponse);
+  
+  // User's NFT collection
+  rpc GetNFTsByOwner(GetNFTsByOwnerRequest) returns (GetNFTsByOwnerResponse);
+}
+
+// Deploy NFT contract request
+message DeployNFTContractRequest {
+  string from_address = 1;
+  string contract_name = 2;
+  string contract_symbol = 3;
+  string base_uri = 4;
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  string user_id = 7;
+  string collection_description = 8;
+  string royalty_percentage = 9; // e.g., "2.5" for 2.5%
+}
+
+// Deploy NFT contract response
+message DeployNFTContractResponse {
+  string contract_address = 1;
+  string transaction_hash = 2;
+  int32 status = 3; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 4;
+  google.protobuf.Timestamp deployed_at = 5;
+  string gas_used = 6;
+}
+
+// Create NFT collection request
+message CreateNFTCollectionRequest {
+  string contract_address = 1;
+  string collection_name = 2;
+  string collection_description = 3;
+  string collection_image_url = 4;
+  string collection_banner_url = 5;
+  string creator_address = 6;
+  string royalty_percentage = 7;
+  string category = 8;
+  string user_id = 9;
+  repeated string tags = 10;
+}
+
+// Create NFT collection response
+message CreateNFTCollectionResponse {
+  string collection_id = 1;
+  string collection_name = 2;
+  string contract_address = 3;
+  bool success = 4;
+  string error_message = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// Mint NFT request
+message MintNFTRequest {
+  string contract_address = 1;
+  string to_address = 2;
+  string token_uri = 3;
+  string metadata = 4; // JSON metadata
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  string user_id = 7;
+  string collection_id = 8;
+  string creator_address = 9;
+}
+
+// Mint NFT response
+message MintNFTResponse {
+  string token_id = 1;
+  string transaction_hash = 2;
+  int32 status = 3; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 4;
+  google.protobuf.Timestamp minted_at = 5;
+  string gas_used = 6;
+  string token_uri = 7;
+}
+
+// Transfer NFT request
+message TransferNFTRequest {
+  string contract_address = 1;
+  string token_id = 2;
+  string from_address = 3;
+  string to_address = 4;
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  string user_id = 7;
+  string transfer_reason = 8; // sale, gift, trade, etc.
+}
+
+// Transfer NFT response
+message TransferNFTResponse {
+  string transaction_hash = 1;
+  int32 status = 2; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 3;
+  google.protobuf.Timestamp transferred_at = 4;
+  string gas_used = 5;
+  string new_owner = 6;
+}
+
+// Burn NFT request
+message BurnNFTRequest {
+  string contract_address = 1;
+  string token_id = 2;
+  string owner_address = 3;
+  string gas_price = 4;
+  int64 gas_limit = 5;
+  string user_id = 6;
+  string burn_reason = 7;
+}
+
+// Burn NFT response
+message BurnNFTResponse {
+  string transaction_hash = 1;
+  int32 status = 2; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 3;
+  google.protobuf.Timestamp burned_at = 4;
+  string gas_used = 5;
+}
+
+// Get NFT info request
+message GetNFTInfoRequest {
+  string contract_address = 1;
+  string token_id = 2;
+  int64 block_number = 3; // optional, latest if not specified
+}
+
+// Get NFT info response
+message GetNFTInfoResponse {
+  string token_id = 1;
+  string contract_address = 2;
+  string owner_address = 3;
+  string token_uri = 4;
+  string metadata = 5; // JSON metadata
+  string name = 6;
+  string description = 7;
+  string image_url = 8;
+  string animation_url = 9;
+  repeated string attributes = 10;
+  string collection_name = 11;
+  string creator_address = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp last_transferred_at = 14;
+  int64 transfer_count = 15;
+}
+
+// Get NFTs by owner request
+message GetNFTsByOwnerRequest {
+  string owner_address = 1;
+  string contract_address = 2; // optional filter by contract
+  int32 limit = 3;
+  int32 offset = 4;
+  string collection_id = 5; // optional filter by collection
+}
+
+// Get NFTs by owner response
+message GetNFTsByOwnerResponse {
+  repeated NFTInfo nfts = 1;
+  int32 total_count = 2;
+  bool has_more = 3;
+  int32 next_offset = 4;
+  string total_value = 5; // estimated total value
+}
+
+// NFT info
+message NFTInfo {
+  string token_id = 1;
+  string contract_address = 2;
+  string token_uri = 3;
+  string name = 4;
+  string description = 5;
+  string image_url = 6;
+  string collection_name = 7;
+  string creator_address = 8;
+  google.protobuf.Timestamp created_at = 9;
+  string estimated_value = 10;
+  int64 transfer_count = 11;
+}

@@ -1,0 +1,261 @@
+syntax = "proto3";
+package nft_token.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/nft_token/types";
+
+// NFTStatus defines the lifecycle state of an NFT
+enum NFTStatus {
+  NFT_STATUS_UNSPECIFIED = 0;
+  NFT_STATUS_ACTIVE = 1;
+  NFT_STATUS_BURNED = 2;
+  NFT_STATUS_TRANSFERRED = 3;
+}
+
+// CollectionStatus defines the lifecycle state of an NFT collection
+enum CollectionStatus {
+  COLLECTION_STATUS_UNSPECIFIED = 0;
+  COLLECTION_STATUS_ACTIVE = 1;
+  COLLECTION_STATUS_INACTIVE = 2;
+}
+
+// NFTMetadata represents standardized NFT metadata schema
+message NFTMetadata {
+  string name = 1;
+  string description = 2;
+  string image_uri = 3;
+  string external_uri = 4;
+  repeated string attributes = 5; // Key-value pairs as strings
+  string animation_url = 6;
+  string background_color = 7;
+  string youtube_url = 8;
+}
+
+// MsgMintNFT defines a message for minting a new NFT
+message MsgMintNFT {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string minter = 1;
+  string recipient = 2;
+  string nft_name = 3;
+  string nft_description = 4;
+  string nft_image_uri = 5;
+  NFTMetadata nft_metadata = 6 [(gogoproto.nullable) = false];
+  string collection_id = 7;
+  double royalty_percentage = 8;
+  cosmos.base.v1beta1.Coin minting_fee = 9 [(gogoproto.nullable) = false];
+  string memo = 10;
+}
+
+// MsgMintNFTResponse defines the response for MsgMintNFT
+message MsgMintNFTResponse {
+  bool success = 1;
+  string nft_id = 2;
+  string token_id = 3;
+  string minting_hash = 4;
+  string transaction_hash = 5;
+}
+
+// MsgTransferNFT defines a message for transferring an NFT
+message MsgTransferNFT {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string sender = 1;
+  string recipient = 2;
+  string nft_id = 3;
+  string token_id = 4;
+  cosmos.base.v1beta1.Coin transfer_fee = 5 [(gogoproto.nullable) = false];
+  string memo = 6;
+}
+
+// MsgTransferNFTResponse defines the response for MsgTransferNFT
+message MsgTransferNFTResponse {
+  bool success = 1;
+  string transfer_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgBurnNFT defines a message for burning an NFT
+message MsgBurnNFT {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string burner = 1;
+  string nft_id = 2;
+  string token_id = 3;
+  string burn_reason = 4;
+  string memo = 5;
+}
+
+// MsgBurnNFTResponse defines the response for MsgBurnNFT
+message MsgBurnNFTResponse {
+  bool success = 1;
+  string burn_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgUpdateNFT defines a message for updating NFT metadata
+message MsgUpdateNFT {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string updater = 1;
+  string nft_id = 2;
+  string token_id = 3;
+  string new_name = 4;
+  string new_description = 5;
+  string new_image_uri = 6;
+  NFTMetadata new_metadata = 7 [(gogoproto.nullable) = false];
+  string memo = 8;
+}
+
+// MsgUpdateNFTResponse defines the response for MsgUpdateNFT
+message MsgUpdateNFTResponse {
+  bool success = 1;
+  string update_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgCreateCollection defines a message for creating an NFT collection
+message MsgCreateCollection {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string creator = 1;
+  string collection_name = 2;
+  string collection_description = 3;
+  string collection_image_uri = 4;
+  NFTMetadata collection_metadata = 5 [(gogoproto.nullable) = false];
+  string collection_symbol = 6;
+  double royalty_percentage = 7;
+  cosmos.base.v1beta1.Coin creation_fee = 8 [(gogoproto.nullable) = false];
+  string memo = 9;
+}
+
+// MsgCreateCollectionResponse defines the response for MsgCreateCollection
+message MsgCreateCollectionResponse {
+  bool success = 1;
+  string collection_id = 2;
+  string creation_hash = 3;
+  string transaction_hash = 4;
+}
+
+// QueryNFTRequest defines the request for querying an NFT
+message QueryNFTRequest {
+  string nft_id = 1;
+  string token_id = 2;
+}
+
+// QueryNFTResponse defines the response for querying an NFT
+message QueryNFTResponse {
+  NFT nft = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryNFTsRequest defines the request for querying multiple NFTs
+message QueryNFTsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  string owner = 2;
+  string collection_id = 3;
+  NFTStatus status = 4;
+}
+
+// QueryNFTsResponse defines the response for querying multiple NFTs
+message QueryNFTsResponse {
+  repeated NFT nfts = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryCollectionRequest defines the request for querying a collection
+message QueryCollectionRequest {
+  string collection_id = 1;
+}
+
+// QueryCollectionResponse defines the response for querying a collection
+message QueryCollectionResponse {
+  NFTCollection collection = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryCollectionsRequest defines the request for querying multiple collections
+message QueryCollectionsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  string creator = 2;
+  CollectionStatus status = 3;
+}
+
+// QueryCollectionsResponse defines the response for querying multiple collections
+message QueryCollectionsResponse {
+  repeated NFTCollection collections = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryNFTStatsRequest defines the request for querying NFT statistics
+message QueryNFTStatsRequest {
+  string collection_id = 1;
+}
+
+// QueryNFTStatsResponse defines the response for querying NFT statistics
+message QueryNFTStatsResponse {
+  NFTStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// NFT represents a non-fungible token
+message NFT {
+  string id = 1;
+  string token_id = 2;
+  string name = 3;
+  string description = 4;
+  string image_uri = 5;
+  NFTMetadata metadata = 6 [(gogoproto.nullable) = false];
+  string owner = 7;
+  string creator = 8;
+  string collection_id = 9;
+  NFTStatus status = 10;
+  double royalty_percentage = 11;
+  cosmos.base.v1beta1.Coin transfer_fee = 12 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp minted_at = 13 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp last_transferred_at = 14 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp burned_at = 15 [(gogoproto.nullable) = false];
+  int64 transfer_count = 16;
+  cosmos.base.v1beta1.Coin current_value = 17 [(gogoproto.nullable) = false];
+  string memo = 18;
+}
+
+// NFTCollection represents an NFT collection
+message NFTCollection {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string image_uri = 4;
+  NFTMetadata metadata = 5 [(gogoproto.nullable) = false];
+  string symbol = 6;
+  string creator = 7;
+  CollectionStatus status = 8;
+  double royalty_percentage = 9;
+  google.protobuf.Timestamp created_at = 10 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp updated_at = 11 [(gogoproto.nullable) = false];
+  int64 total_nfts = 12;
+  int64 active_nfts = 13;
+  int64 burned_nfts = 14;
+  cosmos.base.v1beta1.Coin total_volume = 15 [(gogoproto.nullable) = false];
+  string memo = 16;
+}
+
+// NFTStats represents NFT statistics
+message NFTStats {
+  int64 total_nfts = 1;
+  int64 active_nfts = 2;
+  int64 burned_nfts = 3;
+  int64 total_collections = 4;
+  int64 active_collections = 5;
+  int64 total_owners = 6;
+  cosmos.base.v1beta1.Coin total_volume = 7 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin average_nft_value = 8 [(gogoproto.nullable) = false];
+  string most_valuable_nft = 9;
+  google.protobuf.Timestamp last_activity = 10 [(gogoproto.nullable) = false];
+}

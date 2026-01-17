@@ -1,0 +1,190 @@
+server:
+  host: 0.0.0.0
+  port: '8004'
+  grpc:
+    port: '8004'
+database:
+  host: postgres
+  port: 5432
+  user: postgres
+  password: password
+  dbname: blockchain_db
+  sslmode: disable
+  max_conns: 10
+  min_conns: 2
+  enabled: true
+redis:
+  host: redis
+  port: 6379
+  password: ''
+  db: 0
+  max_retries: 3
+  pool_size: 10
+  enabled: true
+clickhouse:
+  host: clickhouse
+  port: 9000
+  user: default
+  password: password
+  dbname: blockchain_db
+  enabled: false
+influxdb:
+  host: influxdb
+  port: 8086
+  token: ''
+  org: usc
+  bucket: blockchain_db
+  enabled: false
+quickwit:
+  host: quickwit
+  port: 7280
+  username: ''
+  password: ''
+  index_prefix: blockchain_db
+  enabled: false
+kafka:
+  brokers:
+  - kafka:9092
+  group_id: service-04
+  topics:
+  - user-events
+  - service-04-events
+log:
+  level: info
+  format: json
+  output: stdout
+service:
+  name: service-04
+  version: 1.0.0
+  environment: development
+metrics:
+  enabled: true
+  port: 9004
+  path: /metrics
+auth:
+  jwt_secret: your-super-secret-jwt-key-change-in-production-usc-platform-2024-analytics-service-secret-key
+  jwt_expiry: 24h
+  refresh_expiry: 168h
+  issuer: usc-platform
+cache:
+  enabled: true
+  ttl: 3600
+  max_size: 1000
+middleware:
+  timeout_seconds: 30
+  rate_limit_per_sec: 100
+  enable_recovery: true
+  enable_logging: true
+  enable_metrics: true
+  enable_auth: true
+  enable_rate_limit: true
+consensus:
+  type: pos
+  block_time: 5s
+  validator_timeout: 30s
+  min_stake_amount: 1000
+  max_validators: 100
+  slashing_enabled: true
+  slashing_penalty: 0.05
+cosmos_sdk:
+  enabled: true
+  chain_id: usc-1
+  node_address: tcp://localhost:26657
+  grpc_address: localhost:9090
+  rest_address: localhost:1317
+  rpc_timeout: 10s
+  grpc_timeout: 10s
+  modules:
+    usc:
+      enabled: true
+      keeper_address: '0x0000000000000000000000000000000000000001'
+      config:
+        max_supply: '10000000000000000000000000000'
+        decimals: 18
+        denom: usc
+    reward:
+      enabled: true
+      keeper_address: '0x0000000000000000000000000000000000000002'
+      config:
+        distribution_interval: 24h
+        reward_rate: 0.05
+    nft:
+      enabled: true
+      keeper_address: '0x0000000000000000000000000000000000000003'
+      config:
+        max_supply: 10000
+        metadata_uri: ipfs://
+    contract:
+      enabled: true
+      keeper_address: '0x0000000000000000000000000000000000000004'
+      config:
+        max_contract_size: 1048576
+        gas_limit: 1000000
+    validator:
+      enabled: true
+      keeper_address: '0x0000000000000000000000000000000000000005'
+      config:
+        min_stake: 1000
+        max_validators: 100
+    network:
+      enabled: true
+      keeper_address: '0x0000000000000000000000000000000000000006'
+      config:
+        max_peers: 50
+        timeout: 30s
+    bridge:
+      enabled: true
+      keeper_address: '0x0000000000000000000000000000000000000007'
+      config:
+        max_bridges: 10
+        fee_rate: 0.01
+    streaming:
+      enabled: true
+      keeper_address: '0x0000000000000000000000000000000000000008'
+      config:
+        max_streams: 1000
+        timeout: 60s
+    certificate:
+      enabled: true
+      keeper_address: '0x0000000000000000000000000000000000000009'
+      config:
+        max_certificates: 10000
+        expiry: 365d
+    store:
+      enabled: true
+      keeper_address: '0x000000000000000000000000000000000000000a'
+      config:
+        max_stores: 100
+        fee_rate: 0.02
+    token:
+      enabled: true
+      keeper_address: '0x000000000000000000000000000000000000000b'
+      config:
+        max_tokens: 1000
+        max_supply: '1000000000000000000000000000'
+    block:
+      enabled: true
+      keeper_address: '0x000000000000000000000000000000000000000c'
+      config:
+        block_time: 5s
+        max_tx_size: 1048576
+blockchain_analytics:
+  enabled: true
+  metrics_interval: 60s
+  retention_period: 30d
+  performance:
+    enabled: true
+    interval: 30s
+    retention: 7d
+  errors:
+    enabled: true
+    max_errors: 1000
+    retention: 7d
+  state:
+    enabled: true
+    interval: 10s
+    retention: 30d
+  events:
+    enabled: true
+    max_streams: 1000
+    timeout: 60s

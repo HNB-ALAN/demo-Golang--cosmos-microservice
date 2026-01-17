@@ -1,0 +1,76 @@
+groups:
+  - name: {{SERVICE_ID}}_critical
+    interval: 30s
+    rules:
+      - alert: {{SERVICE_NAME}}Down
+        expr: up{job="{{SERVICE_ID}}"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: {{METRIC_PREFIX}}
+        annotations:
+          summary: "{{SERVICE_NAME}} service is down"
+          description: "{{SERVICE_NAME}} service has been down for more than 30 seconds. Immediate action required."
+          runbook_url: "https://docs.usc-platform.com/runbooks/{{SERVICE_ID}}-down"
+
+      - alert: {{SERVICE_NAME}}HighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            rate({{METRIC_PREFIX}}_request_duration_seconds_bucket[5m])
+          ) > {{LATENCY_THRESHOLD}}
+        for: 5m
+        labels:
+          severity: warning
+          service: {{METRIC_PREFIX}}
+        annotations:
+          summary: "{{SERVICE_NAME}} high latency detected"
+          description: "{{SERVICE_NAME}} p95 latency exceeds {{LATENCY_THRESHOLD}}s for 5 minutes."
+          runbook_url: "https://docs.usc-platform.com/runbooks/{{SERVICE_ID}}-high-latency"
+
+      - alert: {{SERVICE_NAME}}HighErrorRate
+        expr: |
+          (
+            sum(rate({{METRIC_PREFIX}}_errors_total[2m]))
+            /
+            sum(rate({{METRIC_PREFIX}}_requests_total[2m]))
+          ) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+          service: {{METRIC_PREFIX}}
+        annotations:
+          summary: "{{SERVICE_NAME}} high error rate detected"
+          description: "{{SERVICE_NAME}} error rate exceeds 1% for 2 minutes. Current error rate: {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.usc-platform.com/runbooks/{{SERVICE_ID}}-high-error-rate"
+
+  - name: {{SERVICE_ID}}_availability
+    interval: 30s
+    rules:
+      - alert: {{SERVICE_NAME}}UptimeBelowTarget
+        expr: |
+          (
+            count(up{job="{{SERVICE_ID}}"} == 1) / count(up{job="{{SERVICE_ID}}"})
+          ) < 0.999
+        for: 5m
+        labels:
+          severity: critical
+          service: {{METRIC_PREFIX}}
+        annotations:
+          summary: "{{SERVICE_NAME}} uptime below 99.9% target"
+          description: "{{SERVICE_NAME}} uptime is below 99.9% target for 5 minutes. Current uptime: {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.usc-platform.com/runbooks/{{SERVICE_ID}}-uptime"
+
+  - name: {{SERVICE_ID}}_performance
+    interval: 1m
+    rules:
+      - alert: {{SERVICE_NAME}}LowRequestRate
+        expr: |
+          sum(rate({{METRIC_PREFIX}}_requests_total[5m])) < 1
+        for: 10m
+        labels:
+          severity: info
+          service: {{METRIC_PREFIX}}
+        annotations:
+          summary: "{{SERVICE_NAME}} request rate is very low"
+          description: "{{SERVICE_NAME}} is receiving less than 1 request per second for 10 minutes. Possible service degradation."
+

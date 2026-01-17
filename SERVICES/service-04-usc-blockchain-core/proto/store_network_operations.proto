@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+
+// Store network operations service for external network integration
+service StoreNetworkOperationsService {
+  // Sync external network state
+  rpc SyncStoreNetworkState(SyncStoreNetworkStateRequest) returns (SyncStoreNetworkStateResponse);
+  
+  // External network info
+  rpc GetStoreNetworkInfo(GetStoreNetworkInfoRequest) returns (GetStoreNetworkInfoResponse);
+  
+  // Update bridge configuration
+  rpc UpdateStoreBridgeConfig(UpdateStoreBridgeConfigRequest) returns (UpdateStoreBridgeConfigResponse);
+}
+
+// Sync store network state request
+message SyncStoreNetworkStateRequest {
+  string network_id = 1;
+  string sync_type = 2; // full, incremental, selective
+  int64 from_block = 3;
+  int64 to_block = 4;
+  string user_id = 5;
+  string store_id = 6;
+}
+
+// Sync store network state response
+message SyncStoreNetworkStateResponse {
+  bool success = 1;
+  string sync_id = 2;
+  int64 blocks_synced = 3;
+  int64 transactions_synced = 4;
+  string sync_status = 5; // completed, in_progress, failed
+  google.protobuf.Timestamp sync_started_at = 6;
+  google.protobuf.Timestamp sync_completed_at = 7;
+  string error_message = 8;
+  int32 error_code = 9;
+}
+
+// Get store network info request
+message GetStoreNetworkInfoRequest {
+  string network_id = 1;
+  string info_type = 2; // basic, detailed, status
+}
+
+// Get store network info response
+message GetStoreNetworkInfoResponse {
+  bool success = 1;
+  StoreNetworkInfo network_info = 2;
+  string error_message = 3;
+  int32 error_code = 4;
+}
+
+// Update store bridge config request
+message UpdateStoreBridgeConfigRequest {
+  string bridge_address = 1;
+  string config_data = 2; // JSON configuration
+  string config_type = 3; // security, performance, compliance
+  string user_id = 4;
+  string store_id = 5;
+}
+
+// Update store bridge config response
+message UpdateStoreBridgeConfigResponse {
+  bool success = 1;
+  string config_id = 2;
+  string updated_config = 3;
+  google.protobuf.Timestamp updated_at = 4;
+  string error_message = 5;
+  int32 error_code = 6;
+}
+
+// Store network information
+message StoreNetworkInfo {
+  string network_id = 1;
+  string network_name = 2;
+  string network_type = 3; // ethereum, binance, polygon, etc.
+  string chain_id = 4;
+  string rpc_url = 5;
+  string explorer_url = 6;
+  string native_currency = 7;
+  string network_status = 8; // active, inactive, maintenance
+  string sync_status = 9; // synced, syncing, behind
+  int64 current_block = 10;
+  int64 latest_block = 11;
+  int64 blocks_behind = 12;
+  string network_health = 13; // healthy, degraded, down
+  google.protobuf.Timestamp last_sync = 14;
+  google.protobuf.Timestamp created_at = 15;
+  google.protobuf.Timestamp updated_at = 16;
+  
+  // Network capabilities
+  repeated string supported_tokens = 17;
+  repeated string supported_bridges = 18;
+  string gas_price = 19;
+  string gas_limit = 20;
+  string block_time = 21;
+  
+  // Performance metrics
+  string average_response_time = 22;
+  string success_rate = 23;
+  string uptime_percentage = 24;
+  int64 total_transactions = 25;
+  string daily_volume = 26;
+  
+  // Security metrics
+  string security_score = 27;
+  int64 security_incidents = 28;
+  string compliance_status = 29;
+  repeated string security_features = 30;
+}

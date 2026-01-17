@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+
+// Product certificate operations service for product authenticity verification
+service ProductCertificateOperationsService {
+  // Issue product certificates
+  rpc CreateProductCertificate(CreateProductCertificateRequest) returns (CreateProductCertificateResponse);
+  
+  // Verify product authenticity
+  rpc VerifyBlockchainProductCertificate(VerifyBlockchainProductCertificateRequest) returns (VerifyBlockchainProductCertificateResponse);
+  
+  // Transfer product ownership
+  rpc TransferProductOwnership(TransferProductOwnershipRequest) returns (TransferProductOwnershipResponse);
+}
+
+// Create product certificate request
+message CreateProductCertificateRequest {
+  string from_address = 1;
+  string product_id = 2;
+  string product_name = 3;
+  string product_description = 4;
+  string manufacturer_address = 5;
+  string serial_number = 6;
+  string batch_number = 7;
+  string manufacturing_date = 8;
+  string expiration_date = 9;
+  string product_metadata = 10; // JSON metadata
+  string gas_price = 11;
+  int64 gas_limit = 12;
+  string user_id = 13;
+  string certificate_type = 14; // authenticity, warranty, quality, etc.
+}
+
+// Create product certificate response
+message CreateProductCertificateResponse {
+  string certificate_id = 1;
+  string transaction_hash = 2;
+  int32 status = 3; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 4;
+  google.protobuf.Timestamp created_at = 5;
+  string gas_used = 6;
+  string certificate_hash = 7;
+}
+
+// Verify blockchain product certificate request
+message VerifyBlockchainProductCertificateRequest {
+  string certificate_id = 1;
+  string product_id = 2;
+  string serial_number = 3;
+  string batch_number = 4;
+  string current_owner_address = 5;
+}
+
+// Verify blockchain product certificate response
+message VerifyBlockchainProductCertificateResponse {
+  bool is_valid = 1;
+  bool is_authentic = 2;
+  string verification_result = 3;
+  string certificate_status = 4; // active, expired, revoked, transferred
+  string original_manufacturer = 5;
+  string current_owner = 6;
+  string manufacturing_date = 7;
+  string expiration_date = 8;
+  google.protobuf.Timestamp verified_at = 9;
+  repeated string ownership_history = 10;
+  string product_metadata = 11;
+}
+
+// Transfer product ownership request
+message TransferProductOwnershipRequest {
+  string certificate_id = 1;
+  string from_address = 2;
+  string to_address = 3;
+  string gas_price = 4;
+  int64 gas_limit = 5;
+  string user_id = 6;
+  string transfer_reason = 7; // sale, gift, warranty_claim, etc.
+  string transfer_metadata = 8; // JSON metadata
+}
+
+// Transfer product ownership response
+message TransferProductOwnershipResponse {
+  string transaction_hash = 1;
+  int32 status = 2; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 3;
+  google.protobuf.Timestamp transferred_at = 4;
+  string gas_used = 5;
+  string new_owner = 6;
+  string certificate_id = 7;
+}

@@ -1,0 +1,248 @@
+syntax = "proto3";
+package validator.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/validator/types";
+
+// ValidatorDescription represents structured validator description
+message ValidatorDescription {
+  string moniker = 1;
+  string identity = 2;
+  string website = 3;
+  string security_contact = 4;
+  string details = 5;
+  map<string, string> metadata = 6;
+}
+
+// SlashReason defines the reason for slashing a validator
+enum SlashReason {
+  SLASH_REASON_UNSPECIFIED = 0;
+  SLASH_REASON_DOUBLE_SIGN = 1;
+  SLASH_REASON_DOWNTIME = 2;
+  SLASH_REASON_MALICIOUS_BEHAVIOR = 3;
+  SLASH_REASON_TECHNICAL_FAULT = 4;
+  SLASH_REASON_GOVERNANCE_VIOLATION = 5;
+}
+
+// UnbondingPeriod defines the unbonding period for delegations
+message UnbondingPeriod {
+  int64 unbonding_time = 1; // Duration in seconds
+  int64 completion_time = 2; // When unbonding completes
+  bool is_immediate = 3; // If true, unbonding is immediate
+}
+
+// ValidatorStatus defines the status of a validator
+enum ValidatorStatus {
+  VALIDATOR_STATUS_UNSPECIFIED = 0;
+  VALIDATOR_STATUS_ACTIVE = 1;
+  VALIDATOR_STATUS_INACTIVE = 2;
+  VALIDATOR_STATUS_JAILED = 3;
+}
+
+// DelegationStatus defines the status of a delegation
+enum DelegationStatus {
+  DELEGATION_STATUS_UNSPECIFIED = 0;
+  DELEGATION_STATUS_ACTIVE = 1;
+  DELEGATION_STATUS_UNDELEGATING = 2;
+  DELEGATION_STATUS_UNDELEGATED = 3;
+}
+
+// MsgCreateValidator defines a message for creating a new validator
+message MsgCreateValidator {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string creator = 1;
+  string validator_address = 2;
+  string validator_name = 3;
+  ValidatorDescription description = 4 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin initial_stake = 5 [(gogoproto.nullable) = false];
+  double commission_rate = 6;
+  cosmos.base.v1beta1.Coin min_self_delegation = 7 [(gogoproto.nullable) = false];
+  string memo = 8;
+}
+
+// MsgCreateValidatorResponse defines the response for MsgCreateValidator
+message MsgCreateValidatorResponse {
+  bool success = 1;
+  string validator_id = 2;
+  string creation_hash = 3;
+  string transaction_hash = 4;
+}
+
+// MsgUpdateValidator defines a message for updating validator information
+message MsgUpdateValidator {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string updater = 1;
+  string validator_address = 2;
+  string new_name = 3;
+  ValidatorDescription new_description = 4 [(gogoproto.nullable) = false];
+  double new_commission_rate = 5;
+  cosmos.base.v1beta1.Coin new_min_self_delegation = 6 [(gogoproto.nullable) = false];
+  string memo = 7;
+}
+
+// MsgUpdateValidatorResponse defines the response for MsgUpdateValidator
+message MsgUpdateValidatorResponse {
+  bool success = 1;
+  string update_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgDelegateValidator defines a message for delegating to a validator
+message MsgDelegateValidator {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string delegator = 1;
+  string validator_address = 2;
+  cosmos.base.v1beta1.Coin delegation_amount = 3 [(gogoproto.nullable) = false];
+  string memo = 4;
+}
+
+// MsgDelegateValidatorResponse defines the response for MsgDelegateValidator
+message MsgDelegateValidatorResponse {
+  bool success = 1;
+  string delegation_id = 2;
+  string delegation_hash = 3;
+  string transaction_hash = 4;
+}
+
+// MsgUndelegateValidator defines a message for undelegating from a validator
+message MsgUndelegateValidator {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string undelegator = 1;
+  string validator_address = 2;
+  cosmos.base.v1beta1.Coin undelegation_amount = 3 [(gogoproto.nullable) = false];
+  UnbondingPeriod unbonding_period = 4 [(gogoproto.nullable) = false];
+  string memo = 5;
+}
+
+// MsgUndelegateValidatorResponse defines the response for MsgUndelegateValidator
+message MsgUndelegateValidatorResponse {
+  bool success = 1;
+  string undelegation_id = 2;
+  string undelegation_hash = 3;
+  string transaction_hash = 4;
+}
+
+// MsgSlashValidator defines a message for slashing a validator
+message MsgSlashValidator {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string slasher = 1;
+  string validator_address = 2;
+  SlashReason slash_reason = 3;
+  cosmos.base.v1beta1.Coin slash_amount = 4 [(gogoproto.nullable) = false];
+  string slash_description = 5;
+  google.protobuf.Timestamp slash_effective_time = 6 [(gogoproto.nullable) = false];
+  string memo = 7;
+}
+
+// MsgSlashValidatorResponse defines the response for MsgSlashValidator
+message MsgSlashValidatorResponse {
+  bool success = 1;
+  string slash_hash = 2;
+  string transaction_hash = 3;
+}
+
+// QueryValidatorRequest defines the request for querying a validator
+message QueryValidatorRequest {
+  string validator_address = 1;
+}
+
+// QueryValidatorResponse defines the response for querying a validator
+message QueryValidatorResponse {
+  Validator validator = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryValidatorsRequest defines the request for querying multiple validators
+message QueryValidatorsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  ValidatorStatus status = 2;
+  string sort_by = 3; // "stake", "commission", "name"
+}
+
+// QueryValidatorsResponse defines the response for querying multiple validators
+message QueryValidatorsResponse {
+  repeated Validator validators = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryValidatorDelegationsRequest defines the request for querying validator delegations
+message QueryValidatorDelegationsRequest {
+  string validator_address = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryValidatorDelegationsResponse defines the response for querying validator delegations
+message QueryValidatorDelegationsResponse {
+  repeated Delegation delegations = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryValidatorStatsRequest defines the request for querying validator statistics
+message QueryValidatorStatsRequest {
+  string validator_address = 1;
+}
+
+// QueryValidatorStatsResponse defines the response for querying validator statistics
+message QueryValidatorStatsResponse {
+  ValidatorStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// Validator represents a USC validator
+message Validator {
+  string address = 1;
+  string name = 2;
+  ValidatorDescription description = 3 [(gogoproto.nullable) = false];
+  ValidatorStatus status = 4;
+  double commission_rate = 5;
+  cosmos.base.v1beta1.Coin total_stake = 6 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin self_stake = 7 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin delegated_stake = 8 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin min_self_delegation = 9 [(gogoproto.nullable) = false];
+  int64 delegation_count = 10;
+  google.protobuf.Timestamp created_at = 11 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp updated_at = 12 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp jailed_at = 13 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp unjailed_at = 14 [(gogoproto.nullable) = false];
+  string memo = 15;
+}
+
+// Delegation represents a delegation to a validator
+message Delegation {
+  string id = 1;
+  string delegator = 2;
+  string validator_address = 3;
+  cosmos.base.v1beta1.Coin delegation_amount = 4 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp delegation_time = 5 [(gogoproto.nullable) = false];
+  DelegationStatus status = 6;
+  google.protobuf.Timestamp undelegation_time = 7;
+  cosmos.base.v1beta1.Coin rewards_earned = 8 [(gogoproto.nullable) = false];
+  UnbondingPeriod unbonding_period = 9;
+  string memo = 10;
+}
+
+// ValidatorStats represents validator statistics
+message ValidatorStats {
+  int64 total_validators = 1;
+  int64 active_validators = 2;
+  int64 inactive_validators = 3;
+  int64 jailed_validators = 4;
+  cosmos.base.v1beta1.Coin total_stake = 5 [(gogoproto.nullable) = false];
+  double average_commission = 6;
+  cosmos.base.v1beta1.Coin total_delegations = 7 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin average_delegation = 8 [(gogoproto.nullable) = false];
+  string most_delegated_validator = 9;
+  google.protobuf.Timestamp last_activity = 10 [(gogoproto.nullable) = false];
+}

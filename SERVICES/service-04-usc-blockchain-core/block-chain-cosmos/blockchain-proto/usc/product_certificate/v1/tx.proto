@@ -1,0 +1,283 @@
+syntax = "proto3";
+package product_certificate.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/product_certificate/types";
+
+// ProductMetadata represents structured product metadata
+message ProductMetadata {
+  string brand = 1;
+  string model = 2;
+  string category = 3;
+  string specifications = 4;
+  map<string, string> attributes = 5;
+  string warranty_info = 6;
+  string documentation = 7;
+}
+
+// VerificationMethod represents verification method details
+message VerificationMethod {
+  string method_type = 1; // QR, NFC, Blockchain, etc.
+  string verification_url = 2;
+  string api_endpoint = 3;
+  string encryption_key = 4;
+  map<string, string> parameters = 5;
+}
+
+// CertificateType defines the type of product certificate
+enum CertificateType {
+  CERTIFICATE_TYPE_UNSPECIFIED = 0;
+  CERTIFICATE_TYPE_AUTHENTICITY = 1;
+  CERTIFICATE_TYPE_QUALITY = 2;
+  CERTIFICATE_TYPE_ORIGIN = 3;
+  CERTIFICATE_TYPE_SUSTAINABILITY = 4;
+  CERTIFICATE_TYPE_SAFETY = 5;
+  CERTIFICATE_TYPE_COMPLIANCE = 6;
+}
+
+// CertificateStatus defines the lifecycle state of a certificate
+enum CertificateStatus {
+  CERTIFICATE_STATUS_UNSPECIFIED = 0;
+  CERTIFICATE_STATUS_ACTIVE = 1;
+  CERTIFICATE_STATUS_REVOKED = 2;
+  CERTIFICATE_STATUS_EXPIRED = 3;
+  CERTIFICATE_STATUS_PENDING = 4;
+}
+
+// VerificationStatus defines the status of a certificate verification
+enum VerificationStatus {
+  VERIFICATION_STATUS_UNSPECIFIED = 0;
+  VERIFICATION_STATUS_VALID = 1;
+  VERIFICATION_STATUS_INVALID = 2;
+  VERIFICATION_STATUS_PENDING = 3;
+  VERIFICATION_STATUS_FAILED = 4;
+}
+
+// AuthenticityCriteria represents standardized authenticity verification criteria
+message AuthenticityCriteria {
+  string manufacturer_id = 1;
+  string production_batch = 2;
+  string serial_number = 3;
+  string manufacturing_date = 4;
+  string expiration_date = 5;
+  string quality_standards = 6; // ISO, FDA, etc.
+  repeated string certifications = 7; // List of certification bodies
+  string origin_country = 8;
+  string origin_region = 9;
+  string supply_chain_proof = 10; // Blockchain hash of supply chain data
+  string digital_signature = 11; // Cryptographic signature
+  string verification_code = 12; // QR code or unique identifier
+}
+
+// MsgCreateCertificate defines a message for creating a product certificate
+message MsgCreateCertificate {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string creator = 1;
+  string product_id = 2;
+  string product_name = 3;
+  string product_description = 4;
+  string product_image_uri = 5;
+  ProductMetadata product_metadata = 6 [(gogoproto.nullable) = false];
+  CertificateType certificate_type = 7;
+  AuthenticityCriteria authenticity_criteria = 8 [(gogoproto.nullable) = false];
+  string issuer_authority = 9;
+  VerificationMethod verification_method = 10 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin certification_fee = 11 [(gogoproto.nullable) = false];
+  string memo = 12;
+}
+
+// MsgCreateCertificateResponse defines the response for MsgCreateCertificate
+message MsgCreateCertificateResponse {
+  bool success = 1;
+  string certificate_id = 2;
+  string creation_hash = 3;
+  string transaction_hash = 4;
+}
+
+// MsgVerifyCertificate defines a message for verifying a certificate
+message MsgVerifyCertificate {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string verifier = 1;
+  string certificate_id = 2;
+  string verification_proof = 3;
+  string memo = 4;
+}
+
+// MsgVerifyCertificateResponse defines the response for MsgVerifyCertificate
+message MsgVerifyCertificateResponse {
+  bool success = 1;
+  bool is_valid = 2;
+  string verification_result = 3;
+  string transaction_hash = 4;
+}
+
+// MsgTransferCertificate defines a message for transferring a certificate
+message MsgTransferCertificate {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string sender = 1;
+  string recipient = 2;
+  string certificate_id = 3;
+  cosmos.base.v1beta1.Coin transfer_fee = 4 [(gogoproto.nullable) = false];
+  string transfer_reason = 5;
+  string memo = 6;
+}
+
+// MsgTransferCertificateResponse defines the response for MsgTransferCertificate
+message MsgTransferCertificateResponse {
+  bool success = 1;
+  string transfer_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgUpdateCertificate defines a message for updating certificate information
+message MsgUpdateCertificate {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string updater = 1;
+  string certificate_id = 2;
+  string new_product_name = 3;
+  string new_product_description = 4;
+  string new_product_image_uri = 5;
+  ProductMetadata new_product_metadata = 6 [(gogoproto.nullable) = false];
+  AuthenticityCriteria new_authenticity_criteria = 7 [(gogoproto.nullable) = false];
+  string new_issuer_authority = 8;
+  VerificationMethod new_verification_method = 9 [(gogoproto.nullable) = false];
+  string memo = 10;
+}
+
+// MsgUpdateCertificateResponse defines the response for MsgUpdateCertificate
+message MsgUpdateCertificateResponse {
+  bool success = 1;
+  string update_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgRevokeCertificate defines a message for revoking a certificate
+message MsgRevokeCertificate {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string revoker = 1;
+  string certificate_id = 2;
+  string revocation_reason = 3;
+  string memo = 4;
+}
+
+// MsgRevokeCertificateResponse defines the response for MsgRevokeCertificate
+message MsgRevokeCertificateResponse {
+  bool success = 1;
+  string revocation_hash = 2;
+  string transaction_hash = 3;
+}
+
+// QueryCertificateRequest defines the request for querying a certificate
+message QueryCertificateRequest {
+  string certificate_id = 1;
+}
+
+// QueryCertificateResponse defines the response for querying a certificate
+message QueryCertificateResponse {
+  Certificate certificate = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryCertificatesRequest defines the request for querying multiple certificates
+message QueryCertificatesRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  string creator = 2;
+  string owner = 3;
+  CertificateType certificate_type = 4;
+  CertificateStatus status = 5;
+}
+
+// QueryCertificatesResponse defines the response for querying multiple certificates
+message QueryCertificatesResponse {
+  repeated Certificate certificates = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryCertificateVerificationsRequest defines the request for querying certificate verifications
+message QueryCertificateVerificationsRequest {
+  string certificate_id = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+  string verifier = 3;
+  VerificationStatus verification_status = 4;
+}
+
+// QueryCertificateVerificationsResponse defines the response for querying certificate verifications
+message QueryCertificateVerificationsResponse {
+  repeated CertificateVerification verifications = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryCertificateStatsRequest defines the request for querying certificate statistics
+message QueryCertificateStatsRequest {
+  string creator = 1;
+}
+
+// QueryCertificateStatsResponse defines the response for querying certificate statistics
+message QueryCertificateStatsResponse {
+  CertificateStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// Certificate represents a product certificate
+message Certificate {
+  string id = 1;
+  string creator = 2;
+  string owner = 3;
+  string product_id = 4;
+  string product_name = 5;
+  string product_description = 6;
+  string product_image_uri = 7;
+  ProductMetadata product_metadata = 8 [(gogoproto.nullable) = false];
+  CertificateType certificate_type = 9;
+  AuthenticityCriteria authenticity_criteria = 10 [(gogoproto.nullable) = false];
+  string issuer_authority = 11;
+  VerificationMethod verification_method = 12 [(gogoproto.nullable) = false];
+  CertificateStatus status = 13;
+  google.protobuf.Timestamp created_at = 14 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp updated_at = 15 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp revoked_at = 16;
+  google.protobuf.Timestamp expired_at = 17;
+  int64 verification_count = 18;
+  int64 transfer_count = 19;
+  cosmos.base.v1beta1.Coin current_value = 20 [(gogoproto.nullable) = false];
+  string memo = 21;
+}
+
+// CertificateVerification represents a certificate verification
+message CertificateVerification {
+  string id = 1;
+  string certificate_id = 2;
+  string verifier = 3;
+  string verification_proof = 4;
+  string verification_result = 5;
+  VerificationStatus verification_status = 6;
+  google.protobuf.Timestamp verified_at = 7 [(gogoproto.nullable) = false];
+  map<string, string> verification_data = 8;
+  string memo = 9;
+}
+
+// CertificateStats represents certificate statistics
+message CertificateStats {
+  int64 total_certificates = 1;
+  int64 active_certificates = 2;
+  int64 revoked_certificates = 3;
+  int64 expired_certificates = 4;
+  int64 total_verifications = 5;
+  int64 valid_verifications = 6;
+  int64 invalid_verifications = 7;
+  double verification_success_rate = 8;
+  string most_common_type = 9;
+  google.protobuf.Timestamp last_activity = 10 [(gogoproto.nullable) = false];
+}

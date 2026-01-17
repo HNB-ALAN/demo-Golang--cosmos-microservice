@@ -1,0 +1,232 @@
+syntax = "proto3";
+package transaction.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/transaction/types";
+
+// TransactionData represents structured transaction data
+message TransactionData {
+  string contract_address = 1;
+  string method_name = 2;
+  repeated string parameters = 3;
+  map<string, string> metadata = 4;
+}
+
+// TransactionType defines supported transaction kinds
+enum TransactionType {
+  TRANSACTION_TYPE_UNSPECIFIED = 0;
+  TRANSACTION_TYPE_TRANSFER = 1;
+  TRANSACTION_TYPE_MINT = 2;
+  TRANSACTION_TYPE_BURN = 3;
+  TRANSACTION_TYPE_CONTRACT_CALL = 4;
+}
+
+// TransactionStatus defines lifecycle states
+enum TransactionStatus {
+  TRANSACTION_STATUS_UNSPECIFIED = 0;
+  TRANSACTION_STATUS_PENDING = 1;
+  TRANSACTION_STATUS_VALIDATED = 2;
+  TRANSACTION_STATUS_EXECUTED = 3;
+  TRANSACTION_STATUS_FAILED = 4;
+  TRANSACTION_STATUS_CANCELLED = 5;
+}
+
+// MsgCreateTransaction defines a message for creating a new transaction
+message MsgCreateTransaction {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string creator = 1;
+  string from_address = 2;
+  string to_address = 3;
+  cosmos.base.v1beta1.Coin amount = 4 [(gogoproto.nullable) = false];
+  TransactionType transaction_type = 5;
+  TransactionData data = 6 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin gas_price = 7 [(gogoproto.nullable) = false];
+  uint64 gas_limit = 8;
+  uint64 nonce = 9;
+  string signature = 10;
+  string memo = 11;
+}
+
+// MsgCreateTransactionResponse defines the response for creating a transaction
+message MsgCreateTransactionResponse {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  bool success = 1;
+  string transaction_hash = 2;
+  string transaction_id = 3;
+}
+
+// MsgValidateTransaction defines a message for validating a transaction
+message MsgValidateTransaction {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string validator = 1;
+  string transaction_hash = 2;
+  string validation_proof = 3;
+  string memo = 4;
+}
+
+// MsgValidateTransactionResponse defines the response for validating a transaction
+message MsgValidateTransactionResponse {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  bool success = 1;
+  bool is_valid = 2;
+  string validation_result = 3;
+}
+
+// MsgExecuteTransaction defines a message for executing a transaction
+message MsgExecuteTransaction {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string executor = 1;
+  string transaction_hash = 2;
+  string execution_proof = 3;
+  string memo = 4;
+}
+
+// MsgExecuteTransactionResponse defines the response for executing a transaction
+message MsgExecuteTransactionResponse {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  bool success = 1;
+  string execution_result = 2;
+  string execution_hash = 3;
+}
+
+// MsgCancelTransaction defines a message for canceling a transaction
+message MsgCancelTransaction {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string canceller = 1;
+  string transaction_hash = 2;
+  string cancel_reason = 3;
+  string memo = 4;
+}
+
+// MsgCancelTransactionResponse defines the response for canceling a transaction
+message MsgCancelTransactionResponse {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  bool success = 1;
+  string cancellation_hash = 2;
+}
+
+// QueryTransactionRequest defines the request for querying a transaction
+message QueryTransactionRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string transaction_hash = 1;
+  string transaction_id = 2;
+}
+
+// QueryTransactionResponse defines the response for querying a transaction
+message QueryTransactionResponse {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  Transaction transaction = 1;
+}
+
+// QueryTransactionsRequest defines the request for querying multiple transactions
+message QueryTransactionsRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  string from_address = 2;
+  string to_address = 3;
+  TransactionType transaction_type = 4;
+  TransactionStatus status = 5;
+  google.protobuf.Timestamp start_time = 6 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp end_time = 7 [(gogoproto.nullable) = false];
+}
+
+// QueryTransactionsResponse defines the response for querying multiple transactions
+message QueryTransactionsResponse {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  repeated Transaction transactions = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryTransactionStatsRequest defines the request for querying transaction statistics
+message QueryTransactionStatsRequest {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  google.protobuf.Timestamp start_time = 1 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp end_time = 2 [(gogoproto.nullable) = false];
+  TransactionType transaction_type = 3;
+}
+
+// QueryTransactionStatsResponse defines the response for querying transaction statistics
+message QueryTransactionStatsResponse {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  TransactionStats stats = 1;
+}
+
+// Transaction represents a blockchain transaction
+message Transaction {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string hash = 1;
+  string id = 2;
+  string from_address = 3;
+  string to_address = 4;
+  cosmos.base.v1beta1.Coin amount = 5 [(gogoproto.nullable) = false];
+  TransactionType transaction_type = 6;
+  TransactionStatus status = 7;
+  TransactionData data = 8 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin gas_price = 9 [(gogoproto.nullable) = false];
+  uint64 gas_limit = 10;
+  uint64 nonce = 11;
+  string signature = 12;
+  string memo = 13;
+  google.protobuf.Timestamp created_at = 14 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp validated_at = 15 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp executed_at = 16 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp failed_at = 17 [(gogoproto.nullable) = false];
+  string validation_proof = 18;
+  string execution_proof = 19;
+  string error_message = 20;
+  int64 gas_used = 21;
+  cosmos.base.v1beta1.Coin fee = 22 [(gogoproto.nullable) = false];
+}
+
+// TransactionStats represents transaction statistics
+message TransactionStats {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  int64 total_transactions = 1;
+  int64 pending_transactions = 2;
+  int64 validated_transactions = 3;
+  int64 executed_transactions = 4;
+  int64 failed_transactions = 5;
+  int64 cancelled_transactions = 6;
+  cosmos.base.v1beta1.Coin total_volume = 7 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin average_transaction_value = 8 [(gogoproto.nullable) = false];
+  double success_rate = 9;
+  int64 average_execution_time_seconds = 10;
+  int64 current_height = 11;
+  google.protobuf.Timestamp last_transaction_time = 12 [(gogoproto.nullable) = false];
+}

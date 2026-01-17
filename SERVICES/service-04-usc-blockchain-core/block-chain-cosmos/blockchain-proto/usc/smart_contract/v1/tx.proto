@@ -1,0 +1,180 @@
+syntax = "proto3";
+package smart_contract.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/smart_contract/types";
+
+// ConstructorParams represents structured constructor parameters
+message ConstructorParams {
+  repeated string parameters = 1;
+  map<string, string> metadata = 2;
+  map<string, string> config = 3;
+}
+
+// ContractStatus defines the lifecycle state of a smart contract
+enum ContractStatus {
+  CONTRACT_STATUS_UNSPECIFIED = 0;
+  CONTRACT_STATUS_ACTIVE = 1;
+  CONTRACT_STATUS_DESTROYED = 2;
+}
+
+// MsgDeployContract defines a message for deploying a smart contract
+message MsgDeployContract {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string deployer = 1;
+  string contract_code = 2;
+  int64 code_size = 3;
+  string contract_name = 4;
+  string contract_version = 5;
+  ConstructorParams init_params = 6 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin deployment_fee = 7 [(gogoproto.nullable) = false];
+  uint64 gas_limit = 8;
+  cosmos.base.v1beta1.Coin gas_price = 9 [(gogoproto.nullable) = false];
+  string memo = 10;
+}
+
+// MsgDeployContractResponse defines the response for MsgDeployContract
+message MsgDeployContractResponse {
+  bool success = 1;
+  string contract_address = 2;
+  string deployment_hash = 3;
+  string transaction_hash = 4;
+}
+
+// MsgExecuteContract defines a message for executing a smart contract
+message MsgExecuteContract {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string executor = 1;
+  string contract_address = 2;
+  string method_name = 3;
+  repeated string method_params = 4;
+  cosmos.base.v1beta1.Coin execution_fee = 5 [(gogoproto.nullable) = false];
+  uint64 gas_limit = 6;
+  cosmos.base.v1beta1.Coin gas_price = 7 [(gogoproto.nullable) = false];
+  string memo = 8;
+}
+
+// MsgExecuteContractResponse defines the response for MsgExecuteContract
+message MsgExecuteContractResponse {
+  bool success = 1;
+  string return_value = 2; // Concise execution result
+  repeated string logs = 3; // Concise execution logs
+  string execution_hash = 4;
+  string transaction_hash = 5;
+}
+
+// MsgUpdateContract defines a message for updating a smart contract
+message MsgUpdateContract {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string updater = 1;
+  string contract_address = 2;
+  string new_code = 3;
+  int64 new_code_size = 4;
+  string new_version = 5;
+  ConstructorParams update_params = 6 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin update_fee = 7 [(gogoproto.nullable) = false];
+  uint64 gas_limit = 8;
+  cosmos.base.v1beta1.Coin gas_price = 9 [(gogoproto.nullable) = false];
+  string memo = 10;
+}
+
+// MsgUpdateContractResponse defines the response for MsgUpdateContract
+message MsgUpdateContractResponse {
+  bool success = 1;
+  string update_hash = 2;
+  string transaction_hash = 3;
+}
+
+// MsgDestroyContract defines a message for destroying a smart contract
+message MsgDestroyContract {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string destroyer = 1;
+  string contract_address = 2;
+  string destruction_proof = 3;
+  string memo = 4;
+}
+
+// MsgDestroyContractResponse defines the response for MsgDestroyContract
+message MsgDestroyContractResponse {
+  bool success = 1;
+  string destruction_hash = 2;
+  string transaction_hash = 3;
+}
+
+// QueryContractRequest defines the request for querying a contract
+message QueryContractRequest {
+  string contract_address = 1;
+}
+
+// QueryContractResponse defines the response for querying a contract
+message QueryContractResponse {
+  SmartContract contract = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryContractsRequest defines the request for querying multiple contracts
+message QueryContractsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  string deployer = 2;
+  string contract_name = 3;
+  ContractStatus status = 4;
+}
+
+// QueryContractsResponse defines the response for querying multiple contracts
+message QueryContractsResponse {
+  repeated SmartContract contracts = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryContractStatsRequest defines the request for querying contract statistics
+message QueryContractStatsRequest {
+  string deployer = 1;
+}
+
+// QueryContractStatsResponse defines the response for querying contract statistics
+message QueryContractStatsResponse {
+  ContractStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// SmartContract represents a deployed smart contract
+message SmartContract {
+  string address = 1;
+  string deployer = 2;
+  string name = 3;
+  string version = 4;
+  int64 code_size = 5;
+  string code_hash = 6;
+  ContractStatus status = 7;
+  google.protobuf.Timestamp deployed_at = 8 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp updated_at = 9 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp destroyed_at = 10 [(gogoproto.nullable) = false];
+  int64 execution_count = 11;
+  cosmos.base.v1beta1.Coin total_fees_paid = 12 [(gogoproto.nullable) = false];
+  uint64 gas_limit = 13;
+  cosmos.base.v1beta1.Coin gas_price = 14 [(gogoproto.nullable) = false];
+  string memo = 15;
+}
+
+// ContractStats represents contract statistics
+message ContractStats {
+  int64 total_contracts = 1;
+  int64 active_contracts = 2;
+  int64 destroyed_contracts = 3;
+  int64 total_executions = 4;
+  cosmos.base.v1beta1.Coin total_fees_collected = 5 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin average_execution_fee = 6 [(gogoproto.nullable) = false];
+  int64 total_deployers = 7;
+  string most_active_contract = 8;
+  google.protobuf.Timestamp last_activity = 9 [(gogoproto.nullable) = false];
+}

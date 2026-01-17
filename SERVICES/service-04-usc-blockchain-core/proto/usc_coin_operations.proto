@@ -1,0 +1,182 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// USC coin operations service for core cryptocurrency features
+service USCCoinOperationsService {
+  // Check USC balance
+  rpc GetWalletBalance(GetWalletBalanceRequest) returns (GetWalletBalanceResponse);
+  
+  // Send USC payments
+  rpc TransferUSCBlockchain(TransferUSCBlockchainRequest) returns (TransferUSCBlockchainResponse);
+  
+  // Get USC token supply information
+  rpc GetUSCSupply(google.protobuf.Empty) returns (GetUSCSupplyResponse);
+  
+  // Transaction history
+  rpc GetTransactionHistory(GetTransactionHistoryRequest) returns (GetTransactionHistoryResponse);
+  
+  // Get USC transactions (specific to USC coin)
+  rpc GetUSCTransactions(GetUSCTransactionsRequest) returns (GetUSCTransactionsResponse);
+}
+
+// Get wallet balance request
+message GetWalletBalanceRequest {
+  string wallet_address = 1;
+  string user_id = 2;
+  bool include_pending = 3;
+}
+
+// Get wallet balance response
+message GetWalletBalanceResponse {
+  bool success = 1;
+  string wallet_address = 2;
+  string balance = 3;
+  string pending_balance = 4;
+  string locked_balance = 5;
+  string staked_balance = 6;
+  string available_balance = 7;
+  google.protobuf.Timestamp last_updated = 8;
+  string currency = 9; // USC
+  int32 decimal_places = 10; // 18
+  string error_message = 11;
+  int32 error_code = 12;
+}
+
+// Transfer USC blockchain request
+message TransferUSCBlockchainRequest {
+  string from_address = 1;
+  string to_address = 2;
+  string amount = 3;
+  string gas_price = 4;
+  int64 gas_limit = 5;
+  string data = 6;
+  string user_id = 7;
+  string device_id = 8;
+  string memo = 9;
+}
+
+// Transfer USC blockchain response
+message TransferUSCBlockchainResponse {
+  bool success = 1;
+  string transaction_hash = 2;
+  int32 status = 3; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 4;
+  google.protobuf.Timestamp submitted_at = 5;
+  string from_balance_after = 6;
+  string to_balance_after = 7;
+  string fee_paid = 8;
+  int32 error_code = 9;
+}
+
+// Get USC supply response
+message GetUSCSupplyResponse {
+  bool success = 1;
+  string total_supply = 2;
+  string circulating_supply = 3;
+  string burned_supply = 4;
+  string staked_supply = 5;
+  string locked_supply = 6;
+  string inflation_rate = 7;
+  string annual_inflation = 8;
+  google.protobuf.Timestamp last_updated = 9;
+  string currency = 10; // USC
+  int32 decimal_places = 11; // 18
+  string error_message = 12;
+  int32 error_code = 13;
+}
+
+// Get transaction history request
+message GetTransactionHistoryRequest {
+  string wallet_address = 1;
+  string user_id = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+  google.protobuf.Timestamp start_date = 5;
+  google.protobuf.Timestamp end_date = 6;
+  string transaction_type = 7; // all, sent, received, staked, unstaked
+}
+
+// Get transaction history response
+message GetTransactionHistoryResponse {
+  bool success = 1;
+  repeated TransactionHistoryEntry transactions = 2;
+  int32 total_count = 3;
+  bool has_more = 4;
+  int32 next_offset = 5;
+  string total_sent = 6;
+  string total_received = 7;
+  string total_fees = 8;
+  string error_message = 9;
+  int32 error_code = 10;
+}
+
+// Transaction history entry
+message TransactionHistoryEntry {
+  string transaction_hash = 1;
+  string from_address = 2;
+  string to_address = 3;
+  string amount = 4;
+  string fee = 5;
+  int32 type = 6; // 0=Transfer, 1=Stake, 2=Unstake, 3=Reward, 4=Contract
+  int32 status = 7; // 0=Pending, 1=Confirmed, 2=Failed
+  int64 block_number = 8;
+  string block_hash = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp confirmed_at = 11;
+  string memo = 12;
+  string contract_address = 13;
+  string gas_used = 14;
+  string gas_price = 15;
+}
+
+// Get USC transactions request
+message GetUSCTransactionsRequest {
+  string wallet_address = 1;
+  string user_id = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+  google.protobuf.Timestamp start_date = 5;
+  google.protobuf.Timestamp end_date = 6;
+  string transaction_type = 7; // all, sent, received, staked, unstaked
+  string status = 8; // all, pending, confirmed, failed
+}
+
+// Get USC transactions response
+message GetUSCTransactionsResponse {
+  bool success = 1;
+  repeated USCTransactionEntry transactions = 2;
+  int32 total_count = 3;
+  bool has_more = 4;
+  int32 next_offset = 5;
+  string total_sent = 6;
+  string total_received = 7;
+  string total_fees = 8;
+  string error_message = 9;
+  int32 error_code = 10;
+}
+
+// USC transaction entry
+message USCTransactionEntry {
+  string transaction_hash = 1;
+  string from_address = 2;
+  string to_address = 3;
+  string amount = 4;
+  string fee = 5;
+  int32 type = 6; // 0=Transfer, 1=Stake, 2=Unstake, 3=Reward, 4=Contract
+  int32 status = 7; // 0=Pending, 1=Confirmed, 2=Failed
+  int64 block_number = 8;
+  string block_hash = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp confirmed_at = 11;
+  string memo = 12;
+  string contract_address = 13;
+  string gas_used = 14;
+  string gas_price = 15;
+  string usc_balance_after = 16;
+}

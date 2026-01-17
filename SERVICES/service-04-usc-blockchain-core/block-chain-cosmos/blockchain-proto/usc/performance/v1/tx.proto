@@ -1,0 +1,283 @@
+syntax = "proto3";
+package performance.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/performance/types";
+
+// BenchmarkResult represents benchmark test results
+message BenchmarkResult {
+  string test_name = 1;
+  string test_type = 2;
+  double baseline_value = 3;
+  double current_value = 4;
+  double improvement_percent = 5;
+  string test_environment = 6;
+  google.protobuf.Timestamp test_date = 7 [(gogoproto.nullable) = false];
+  map<string, string> test_parameters = 8;
+}
+
+// OptimizationTarget represents optimization target configuration
+message OptimizationTarget {
+  string target_name = 1;
+  MetricType metric_type = 2;
+  double target_value = 3;
+  double current_value = 4;
+  double priority = 5; // 1-10 scale
+  bool enabled = 6;
+  string optimization_strategy = 7;
+  map<string, string> constraints = 8;
+}
+
+// PerformanceConfig represents performance configuration
+message PerformanceConfig {
+  int32 collection_interval_seconds = 1;
+  int32 retention_days = 2;
+  bool enable_auto_optimization = 3;
+  bool enable_benchmarking = 4;
+  repeated string monitored_metrics = 5;
+  map<string, string> custom_settings = 6;
+}
+
+// TargetType defines the type of performance target
+enum TargetType {
+  TARGET_TYPE_UNSPECIFIED = 0;
+  TARGET_TYPE_VALIDATOR = 1;
+  TARGET_TYPE_NODE = 2;
+  TARGET_TYPE_CONTRACT = 3;
+  TARGET_TYPE_NETWORK = 4;
+  TARGET_TYPE_SERVICE = 5;
+}
+
+// MetricType defines the type of performance metric
+enum MetricType {
+  METRIC_TYPE_UNSPECIFIED = 0;
+  METRIC_TYPE_CPU_USAGE = 1;
+  METRIC_TYPE_MEMORY_USAGE = 2;
+  METRIC_TYPE_DISK_USAGE = 3;
+  METRIC_TYPE_NETWORK_LATENCY = 4;
+  METRIC_TYPE_THROUGHPUT = 5;
+  METRIC_TYPE_ERROR_RATE = 6;
+  METRIC_TYPE_RESPONSE_TIME = 7;
+  METRIC_TYPE_AVAILABILITY = 8;
+  METRIC_TYPE_CUSTOM = 9;
+}
+
+// AnalysisType defines the type of performance analysis
+enum AnalysisType {
+  ANALYSIS_TYPE_UNSPECIFIED = 0;
+  ANALYSIS_TYPE_TREND = 1;
+  ANALYSIS_TYPE_ANOMALY = 2;
+  ANALYSIS_TYPE_COMPARISON = 3;
+  ANALYSIS_TYPE_OPTIMIZATION = 4;
+  ANALYSIS_TYPE_FORECAST = 5;
+  ANALYSIS_TYPE_CORRELATION = 6;
+}
+
+// OptimizationType defines the type of performance optimization
+enum OptimizationType {
+  OPTIMIZATION_TYPE_UNSPECIFIED = 0;
+  OPTIMIZATION_TYPE_AUTO = 1;
+  OPTIMIZATION_TYPE_MANUAL = 2;
+  OPTIMIZATION_TYPE_SCHEDULED = 3;
+  OPTIMIZATION_TYPE_REACTIVE = 4;
+  OPTIMIZATION_TYPE_PREVENTIVE = 5;
+}
+
+// OptimizationStatus defines the status of an optimization
+enum OptimizationStatus {
+  OPTIMIZATION_STATUS_UNSPECIFIED = 0;
+  OPTIMIZATION_STATUS_PENDING = 1;
+  OPTIMIZATION_STATUS_RUNNING = 2;
+  OPTIMIZATION_STATUS_COMPLETED = 3;
+  OPTIMIZATION_STATUS_FAILED = 4;
+  OPTIMIZATION_STATUS_CANCELLED = 5;
+}
+
+// MetricStatus defines the status of a metric reading
+enum MetricStatus {
+  METRIC_STATUS_UNSPECIFIED = 0;
+  METRIC_STATUS_NORMAL = 1;
+  METRIC_STATUS_WARNING = 2;
+  METRIC_STATUS_CRITICAL = 3;
+  METRIC_STATUS_ERROR = 4;
+}
+
+// MsgRecordMetrics defines a message for recording performance metrics
+message MsgRecordMetrics {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string recorder = 1;
+  string target_id = 2;
+  TargetType target_type = 3;
+  repeated PerformanceMetric metrics_data = 4 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp timestamp = 5 [(gogoproto.nullable) = false];
+  string memo = 6;
+}
+
+// MsgRecordMetricsResponse defines the response for MsgRecordMetrics
+message MsgRecordMetricsResponse {
+  bool success = 1;
+  string recording_id = 2;
+  string recording_hash = 3;
+  string transaction_hash = 4;
+}
+
+// MsgGetMetrics defines a message for retrieving performance metrics
+message MsgGetMetrics {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string requester = 1;
+  string target_id = 2;
+  MetricType metric_type = 3;
+  google.protobuf.Timestamp start_time = 4 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp end_time = 5 [(gogoproto.nullable) = false];
+  string memo = 6;
+}
+
+// MsgGetMetricsResponse defines the response for MsgGetMetrics
+message MsgGetMetricsResponse {
+  bool success = 1;
+  repeated PerformanceMetric metrics = 2 [(gogoproto.nullable) = false];
+  string transaction_hash = 3;
+}
+
+// MsgAnalyzeMetrics defines a message for analyzing performance metrics
+message MsgAnalyzeMetrics {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string analyzer = 1;
+  string target_id = 2;
+  AnalysisType analysis_type = 3;
+  PerformanceConfig analysis_params = 4 [(gogoproto.nullable) = false];
+  repeated OptimizationTarget optimization_targets = 5 [(gogoproto.nullable) = false];
+  string memo = 6;
+}
+
+// MsgAnalyzeMetricsResponse defines the response for MsgAnalyzeMetrics
+message MsgAnalyzeMetricsResponse {
+  bool success = 1;
+  string analysis_id = 2;
+  repeated BenchmarkResult benchmark_results = 3 [(gogoproto.nullable) = false];
+  string transaction_hash = 4;
+}
+
+// MsgOptimizePerformance defines a message for performance optimization
+message MsgOptimizePerformance {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string optimizer = 1;
+  string target_id = 2;
+  OptimizationType optimization_type = 3;
+  PerformanceConfig optimization_params = 4 [(gogoproto.nullable) = false];
+  repeated OptimizationTarget optimization_targets = 5 [(gogoproto.nullable) = false];
+  string memo = 6;
+}
+
+// MsgOptimizePerformanceResponse defines the response for MsgOptimizePerformance
+message MsgOptimizePerformanceResponse {
+  bool success = 1;
+  string optimization_id = 2;
+  repeated BenchmarkResult optimization_results = 3 [(gogoproto.nullable) = false];
+  string transaction_hash = 4;
+}
+
+// QueryMetricsRequest defines the request for querying performance metrics
+message QueryMetricsRequest {
+  string target_id = 1;
+  TargetType target_type = 2;
+  MetricType metric_type = 3;
+  google.protobuf.Timestamp start_time = 4 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp end_time = 5 [(gogoproto.nullable) = false];
+}
+
+// QueryMetricsResponse defines the response for querying performance metrics
+message QueryMetricsResponse {
+  repeated PerformanceMetric metrics = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryMetricsListRequest defines the request for querying multiple metrics
+message QueryMetricsListRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  TargetType target_type = 2;
+  MetricType metric_type = 3;
+  string recorder = 4;
+}
+
+// QueryMetricsListResponse defines the response for querying multiple metrics
+message QueryMetricsListResponse {
+  repeated PerformanceMetric metrics = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryPerformanceStatsRequest defines the request for querying performance statistics
+message QueryPerformanceStatsRequest {
+  string target_id = 1;
+  TargetType target_type = 2;
+}
+
+// QueryPerformanceStatsResponse defines the response for querying performance statistics
+message QueryPerformanceStatsResponse {
+  PerformanceStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryOptimizationRequest defines the request for querying optimization results
+message QueryOptimizationRequest {
+  string optimization_id = 1;
+}
+
+// QueryOptimizationResponse defines the response for querying optimization results
+message QueryOptimizationResponse {
+  PerformanceOptimization optimization = 1 [(gogoproto.nullable) = false];
+}
+
+// PerformanceMetric represents a performance metric
+message PerformanceMetric {
+  string id = 1;
+  string target_id = 2;
+  TargetType target_type = 3;
+  MetricType metric_type = 4;
+  string metric_name = 5;
+  double metric_value = 6;
+  string unit = 7;
+  google.protobuf.Timestamp timestamp = 8 [(gogoproto.nullable) = false];
+  string recorder = 9;
+  map<string, string> metadata = 10;
+  MetricStatus status = 11;
+}
+
+// PerformanceStats represents performance statistics
+message PerformanceStats {
+  int64 total_metrics = 1;
+  double average_value = 2;
+  double min_value = 3;
+  double max_value = 4;
+  double median_value = 5;
+  double standard_deviation = 6;
+  int64 warning_count = 7;
+  int64 critical_count = 8;
+  string most_common_metric = 9;
+  google.protobuf.Timestamp last_updated = 10 [(gogoproto.nullable) = false];
+}
+
+// PerformanceOptimization represents a performance optimization
+message PerformanceOptimization {
+  string id = 1;
+  string target_id = 2;
+  TargetType target_type = 3;
+  OptimizationType optimization_type = 4;
+  OptimizationStatus status = 5;
+  PerformanceConfig parameters = 6 [(gogoproto.nullable) = false];
+  repeated BenchmarkResult results = 7 [(gogoproto.nullable) = false];
+  string optimizer = 8;
+  google.protobuf.Timestamp started_at = 9 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp completed_at = 10;
+  double performance_improvement_percent = 11;
+  string memo = 12;
+}

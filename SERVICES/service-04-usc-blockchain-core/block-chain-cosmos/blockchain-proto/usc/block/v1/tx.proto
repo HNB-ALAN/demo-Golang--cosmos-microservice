@@ -1,0 +1,156 @@
+syntax = "proto3";
+package block.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/SERVICES/service-04-usc-blockchain-core/block-chain-cosmos/x/block/types";
+
+// BlockStatus defines the lifecycle state of a block
+enum BlockStatus {
+  BLOCK_STATUS_UNSPECIFIED = 0;
+  BLOCK_STATUS_PENDING = 1;
+  BLOCK_STATUS_VALIDATED = 2;
+  BLOCK_STATUS_FINALIZED = 3;
+}
+
+// MsgCreateBlock defines a message for creating a new block
+message MsgCreateBlock {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string creator = 1;
+  string previous_hash = 2;
+  string merkle_root = 3;
+  google.protobuf.Timestamp timestamp = 4 [(gogoproto.nullable) = false];
+  string data_hash = 5;
+  repeated string validator_set = 6;
+  string consensus_proof = 7;
+  int64 block_size = 8;
+  string transaction_root = 9;
+  string memo = 10;
+}
+
+// MsgCreateBlockResponse defines the response for MsgCreateBlock
+message MsgCreateBlockResponse {
+  bool success = 1;
+  string block_hash = 2;
+  int64 block_height = 3;
+  string transaction_hash = 4;
+}
+
+// MsgValidateBlock defines a message for validating a block
+message MsgValidateBlock {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string validator = 1;
+  string block_hash = 2;
+  string validation_proof = 3;
+  string memo = 4;
+}
+
+// MsgValidateBlockResponse defines the response for MsgValidateBlock
+message MsgValidateBlockResponse {
+  bool success = 1;
+  bool is_valid = 2;
+  string validation_result = 3;
+  string transaction_hash = 4;
+}
+
+// MsgFinalizeBlock defines a message for finalizing a block
+message MsgFinalizeBlock {
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string finalizer = 1;
+  string block_hash = 2;
+  string finalization_proof = 3;
+  string memo = 4;
+}
+
+// MsgFinalizeBlockResponse defines the response for MsgFinalizeBlock
+message MsgFinalizeBlockResponse {
+  bool success = 1;
+  string finalization_hash = 2;
+  int64 finalization_height = 3;
+  string transaction_hash = 4;
+}
+
+// QueryBlockRequest defines the request for querying a block
+message QueryBlockRequest {
+  string block_hash = 1;
+  int64 block_height = 2;
+}
+
+// QueryBlockResponse defines the response for querying a block
+message QueryBlockResponse {
+  Block block = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryBlocksRequest defines the request for querying multiple blocks
+message QueryBlocksRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  int64 start_height = 2;
+  int64 end_height = 3;
+  string creator = 4;
+  BlockStatus status = 5;
+}
+
+// QueryBlocksResponse defines the response for querying multiple blocks
+message QueryBlocksResponse {
+  repeated Block blocks = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryBlockStatsRequest defines the request for querying block statistics
+message QueryBlockStatsRequest {
+  int64 start_height = 1;
+  int64 end_height = 2;
+}
+
+// QueryBlockStatsResponse defines the response for querying block statistics
+message QueryBlockStatsResponse {
+  BlockStats stats = 1 [(gogoproto.nullable) = false];
+}
+
+// Block represents a USC blockchain block
+message Block {
+  string hash = 1;
+  int64 height = 2;
+  string previous_hash = 3;
+  string merkle_root = 4;
+  google.protobuf.Timestamp timestamp = 5 [(gogoproto.nullable) = false];
+  string creator = 6;
+  string validator = 7;
+  string finalizer = 8;
+  BlockStatus status = 9;
+  string data_hash = 10;
+  int64 transaction_count = 11;
+  int64 gas_used = 12;
+  int64 gas_limit = 13;
+  repeated string validator_set = 14;
+  string consensus_proof = 15;
+  int64 block_size = 16;
+  string transaction_root = 17;
+  string memo = 18;
+  google.protobuf.Timestamp created_at = 19 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp validated_at = 20 [(gogoproto.nullable) = false];
+  google.protobuf.Timestamp finalized_at = 21 [(gogoproto.nullable) = false];
+}
+
+// BlockStats represents block statistics
+message BlockStats {
+  int64 total_blocks = 1;
+  int64 pending_blocks = 2;
+  int64 validated_blocks = 3;
+  int64 finalized_blocks = 4;
+  int64 average_block_time_seconds = 5;
+  int64 total_transactions = 6;
+  int64 total_gas_used = 7;
+  int64 average_gas_per_block = 8;
+  int64 current_height = 9;
+  google.protobuf.Timestamp last_block_time = 10 [(gogoproto.nullable) = false];
+}

@@ -1,0 +1,206 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+
+// Store bridge operations service for cross-chain bridge functionality
+service StoreBridgeOperationsService {
+  // Deploy bridge contracts
+  rpc DeployStoreBridge(DeployStoreBridgeRequest) returns (DeployStoreBridgeResponse);
+  
+  // Register external networks
+  rpc RegisterStoreNetwork(RegisterStoreNetworkRequest) returns (RegisterStoreNetworkResponse);
+  
+  // Convert store tokens to USC
+  rpc BridgeStoreTokenToUSC(BridgeStoreTokenToUSCRequest) returns (BridgeStoreTokenToUSCResponse);
+  
+  // Convert USC to store tokens
+  rpc BridgeUSCToStoreToken(BridgeUSCToStoreTokenRequest) returns (BridgeUSCToStoreTokenResponse);
+  
+  // Get store bridge performance metrics
+  rpc GetStoreBridgeMetrics(GetStoreBridgeMetricsRequest) returns (GetStoreBridgeMetricsResponse);
+  
+  // Validate bridge operations
+  rpc ValidateStoreBridge(ValidateStoreBridgeRequest) returns (ValidateStoreBridgeResponse);
+}
+
+// Deploy store bridge request
+message DeployStoreBridgeRequest {
+  string from_address = 1;
+  string bridge_name = 2;
+  string bridge_description = 3;
+  string target_network = 4;
+  string target_chain_id = 5;
+  string bridge_config = 6; // JSON configuration
+  string gas_price = 7;
+  int64 gas_limit = 8;
+  string user_id = 9;
+  string store_id = 10;
+}
+
+// Deploy store bridge response
+message DeployStoreBridgeResponse {
+  bool success = 1;
+  string bridge_address = 2;
+  string transaction_hash = 3;
+  int32 status = 4; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 5;
+  google.protobuf.Timestamp deployed_at = 6;
+  string gas_used = 7;
+  string bridge_abi = 8;
+  int32 error_code = 9;
+}
+
+// Register store network request
+message RegisterStoreNetworkRequest {
+  string network_name = 1;
+  string network_id = 2;
+  string chain_id = 3;
+  string rpc_url = 4;
+  string explorer_url = 5;
+  string native_currency = 6;
+  string network_config = 7; // JSON configuration
+  string user_id = 8;
+  string store_id = 9;
+}
+
+// Register store network response
+message RegisterStoreNetworkResponse {
+  bool success = 1;
+  string network_id = 2;
+  string network_name = 3;
+  string error_message = 4;
+  google.protobuf.Timestamp registered_at = 5;
+  string network_status = 6; // active, pending, failed
+  int32 error_code = 7;
+}
+
+// Bridge store token to USC request
+message BridgeStoreTokenToUSCRequest {
+  string from_address = 1;
+  string store_token_address = 2;
+  string store_token_amount = 3;
+  string target_network = 4;
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  string user_id = 7;
+  string device_id = 8;
+  string memo = 9;
+}
+
+// Bridge store token to USC response
+message BridgeStoreTokenToUSCResponse {
+  bool success = 1;
+  string transaction_hash = 2;
+  int32 status = 3; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 4;
+  google.protobuf.Timestamp bridged_at = 5;
+  string gas_used = 6;
+  string usc_amount = 7;
+  string bridge_fee = 8;
+  int32 error_code = 9;
+}
+
+// Bridge USC to store token request
+message BridgeUSCToStoreTokenRequest {
+  string from_address = 1;
+  string usc_amount = 2;
+  string target_network = 3;
+  string target_token_address = 4;
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  string user_id = 7;
+  string device_id = 8;
+  string memo = 9;
+}
+
+// Bridge USC to store token response
+message BridgeUSCToStoreTokenResponse {
+  bool success = 1;
+  string transaction_hash = 2;
+  int32 status = 3; // 0=Pending, 1=Confirmed, 2=Failed
+  string error_message = 4;
+  google.protobuf.Timestamp bridged_at = 5;
+  string gas_used = 6;
+  string store_token_amount = 7;
+  string bridge_fee = 8;
+  int32 error_code = 9;
+}
+
+// Get store bridge metrics request
+message GetStoreBridgeMetricsRequest {
+  string bridge_address = 1;
+  string time_range = 2; // 1h, 24h, 7d, 30d
+  string metric_type = 3; // all, volume, fees, transactions
+}
+
+// Get store bridge metrics response
+message GetStoreBridgeMetricsResponse {
+  bool success = 1;
+  BridgeMetrics metrics = 2;
+  google.protobuf.Timestamp generated_at = 3;
+  string time_range = 4;
+  string error_message = 5;
+  int32 error_code = 6;
+}
+
+// Validate store bridge request
+message ValidateStoreBridgeRequest {
+  string bridge_address = 1;
+  string validation_type = 2; // security, performance, compliance
+  string user_id = 3;
+}
+
+// Validate store bridge response
+message ValidateStoreBridgeResponse {
+  bool success = 1;
+  bool is_valid = 2;
+  string validation_result = 3;
+  repeated string issues = 4;
+  repeated string recommendations = 5;
+  string security_score = 6;
+  string performance_score = 7;
+  string compliance_score = 8;
+  google.protobuf.Timestamp validated_at = 9;
+  string error_message = 10;
+  int32 error_code = 11;
+}
+
+// Bridge metrics
+message BridgeMetrics {
+  // Volume metrics
+  string total_volume = 1;
+  string daily_volume = 2;
+  string weekly_volume = 3;
+  string monthly_volume = 4;
+  
+  // Transaction metrics
+  int64 total_transactions = 5;
+  int64 daily_transactions = 6;
+  int64 weekly_transactions = 7;
+  int64 monthly_transactions = 8;
+  
+  // Fee metrics
+  string total_fees = 9;
+  string average_fee = 10;
+  string fee_revenue = 11;
+  
+  // Performance metrics
+  string average_processing_time = 12;
+  string success_rate = 13;
+  string failure_rate = 14;
+  int64 pending_transactions = 15;
+  
+  // Network metrics
+  string active_networks = 16;
+  string supported_tokens = 17;
+  string bridge_utilization = 18;
+  
+  // Security metrics
+  string security_score = 19;
+  int64 security_incidents = 20;
+  string compliance_status = 21;
+}

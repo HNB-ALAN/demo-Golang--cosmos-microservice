@@ -1,0 +1,16 @@
+version: 0.8
+
+# Node configuration
+node_id: usc-quickwit-node
+listen_address: 0.0.0.0
+rest_listen_port: 7280
+gossip_listen_port: 7281
+
+# Data directory
+data_dir: /quickwit/data
+
+# Metastore (using file-based for simplicity)
+metastore_uri: file:///quickwit/data/metastore
+
+# Default index settings
+default_index_root_uri: file:///quickwit/data/indexes

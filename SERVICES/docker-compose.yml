@@ -1,0 +1,1106 @@
+# ========================================
+# USC SOCIAL PLATFORM - DOCKER COMPOSE
+# Complete 22 Services + Infrastructure
+# ========================================
+
+services:
+  # ========================================
+  # INFRASTRUCTURE SERVICES
+  # ========================================
+  
+  # PostgreSQL Database (metadata only, NOT for vector - use Qdrant/Weaviate/Pinecone for vectors)
+  postgres:
+    image: postgres:16-alpine
+    container_name: usc-postgres
+    environment:
+      POSTGRES_DB: usc_social_media
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7.4-alpine
+    container_name: usc-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # ClickHouse
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    container_name: usc-clickhouse
+    environment:
+      CLICKHOUSE_DB: usc_analytics
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: "password"
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # InfluxDB
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: usc-influxdb
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: password
+      DOCKER_INFLUXDB_INIT_ORG: usc
+      DOCKER_INFLUXDB_INIT_BUCKET: metrics
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_ADMIN_TOKEN}
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Quickwit
+  quickwit:
+    image: quickwit/quickwit:latest
+    container_name: usc-quickwit
+    command: ["run", "--config", "/quickwit/config/quickwit.yaml"]
+    ports:
+      - "7280:7280"
+      - "7281:7281"
+    volumes:
+      - quickwit_data:/quickwit/data
+      - quickwit_config:/quickwit/config
+      - ./quickwit-config/quickwit.yaml:/quickwit/config/quickwit.yaml:ro
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7280/api/v1/version || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # Kafka (KRaft mode - no ZooKeeper)
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: usc-kafka
+    ports:
+      - "9092:9092"  # Broker listener
+      - "9093:9093"  # Controller listener for KRaft
+    environment:
+      # KRaft mode configuration
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      # Cluster ID (required for KRaft mode)
+      CLUSTER_ID: 5L6g3nShT-eMCtK--X86sw
+      # Listeners configuration (BROKER for clients, CONTROLLER for KRaft)
+      KAFKA_LISTENERS: BROKER://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: BROKER://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,BROKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
+      # Storage configuration (use /var/lib/kafka/data for better compatibility)
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      # Topic configuration (single node setup)
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s  # Increased to allow time for KRaft storage formatting
+    restart: unless-stopped
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: usc-prometheus
+    ports:
+      - "9091:9091"  # USC Platform standard Prometheus port
+    volumes:
+      # Monitoring configuration files (from service-08-monitoring)
+      - ./service-08-monitoring/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./service-08-monitoring/monitoring/rules:/etc/prometheus/rules:ro
+      - ./service-08-monitoring/monitoring/alerts:/etc/prometheus/alerts:ro
+      # Data persistence
+      - prometheus_data:/prometheus
+    command:
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+      - '--web.listen-address=0.0.0.0:9091'
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - usc-network
+    restart: unless-stopped
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: usc-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      # Grafana data persistence
+      - grafana_data:/var/lib/grafana
+      # Optional: Auto-provisioning dashboards and datasources (from service-08-monitoring)
+      - ./service-08-monitoring/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - usc-network
+    restart: unless-stopped
+
+  # Vector Database (Qdrant)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: usc-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5s bash -c '</dev/tcp/localhost/6333' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # TorchServe - ML Model Serving (GPU Enabled)
+  # GPU: Quadro P2000 detected, NVIDIA Runtime available
+  torchserve:
+    image: pytorch/torchserve:latest-gpu
+    container_name: usc-torchserve
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - TS_ENABLE_WTS=true
+      - TS_DEFAULT_HANDLERS=image_classifier,object_detector,text_classifier
+      - TS_AUTH_ENABLED=false  # Disable authentication for test/staging
+    ports:
+      - "8080:8080"  # Inference API
+      - "8081:8081"  # Management API
+      - "8082:8082"  # Metrics API
+    volumes:
+      - torchserve_models:/home/model-server/model-store
+      - ./service-13-ai-service/torchserve/models:/models
+      - ./service-13-ai-service/torchserve/config:/home/model-server/config
+      - ./service-13-ai-service/torchserve/handlers:/home/model-server/handlers
+    command: ["torchserve", "--start", "--model-store", "/home/model-server/model-store", "--ts-config", "/home/model-server/config/config.properties"]
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5s bash -c '</dev/tcp/localhost/8080' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # Object Storage (MinIO as S3-compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: usc-minio
+    ports:
+      - "9030:9000"
+      - "9031:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9031"
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+
+  # ========================================
+  # USC MICROSERVICES (22 SERVICES)
+  # ========================================
+
+  # Service 01: Gateway
+  service-01-gateway:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-01-gateway/Dockerfile
+    container_name: usc-gateway
+    ports:
+      - "8001:8001"  # gRPC service port
+      - "4000:4000"  # GraphQL service port
+      - "9001:9001"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - INFLUX_HOST=http://influxdb:8086
+      - INFLUX_ORG=usc
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 02: Auth
+  service-02-auth:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-02-auth/Dockerfile
+    container_name: usc-auth
+    ports:
+      - "8002:8002"  # Main service port
+      - "9002:9002"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8002"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 03: User
+  service-03-user:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-03-user/Dockerfile
+    container_name: usc-user
+    ports:
+      - "8003:8003"  # Main service port
+      - "9003:9003"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8003"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 04: USC Blockchain Core (Standalone ABCI Server)
+  service-04-usc-blockchain-core:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-04-usc-blockchain-core/Dockerfile
+    container_name: usc-blockchain
+    ports:
+      - "8004:8004"  # Main service port
+      - "9004:9004"  # Metrics endpoint
+      # Note: Port 26658 (ABCI) is internal only - not exposed externally (security)
+      #       ABCI connection can be tested via:
+      #       - CometBFT RPC: curl http://localhost:26657/status (on service-04-cometbft)
+      #       - Docker logs: docker logs usc-blockchain, docker logs usc-cometbft
+      #       CometBFT RPC (26657) provides query interface instead
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - JWT_SECRET=${JWT_SECRET}-usc-platform-2024-blockchain-service-secret-key-min-32-chars
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - COSMOS_CHAIN_ID=usc-1
+      - COSMOS_DB_BACKEND=rocksdb
+      - COSMOS_DB_PATH=/app/block-chain-cosmos/data
+      - ABCI_ADDRESS=tcp://0.0.0.0:26658  # ABCI server listen address
+    volumes:
+      - blockchain_data:/app/block-chain-cosmos/data
+      # Share genesis/config với CometBFT container (read-only)
+      # CometBFT mounts same volume at /cometbft-config to access genesis.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8004"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s  # ✅ Increased from 30s to allow time for: DB migrations (~10-20s) + blockchain init (~5-10s) + ABCI server (~2-3s) + gRPC server (~1-2s) = ~20-35s total. 45s provides buffer for slower systems.
+    restart: unless-stopped
+
+  # Service 04: CometBFT Node (Standalone - connects to ABCI server)
+  service-04-cometbft:
+    image: cometbft/cometbft:v0.38.19
+    container_name: usc-cometbft
+    # Note: Start as root to create directories, then switch to 1001:1001 for file operations
+    ports:
+      - "26657:26657"  # RPC endpoint
+      - "26656:26656"  # P2P networking
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        # Prepare home, init once, seed state, wait genesis, then start
+        # Create directories as root first
+        mkdir -p /cometbft/config /cometbft/data && \
+        # Wait for ABCI server to initialize and create validator key
+        while [ ! -f /cometbft-config/config/genesis.json ]; do sleep 2; done && \
+        while [ ! -f /cometbft-config/config/priv_validator_key.json ]; do sleep 2; done && \
+        # Copy validator key from ABCI server (read from shared volume)
+        if [ -r /cometbft-config/config/priv_validator_key.json ]; then
+          cp /cometbft-config/config/priv_validator_key.json /cometbft/config/priv_validator_key.json && \
+          chmod 600 /cometbft/config/priv_validator_key.json
+        else
+          # If cannot read, generate new validator key
+          echo "⚠️  Cannot read validator key from ABCI server, generating new one..."
+          cometbft gen validator --home=/cometbft >/dev/null 2>&1 || true
+        fi && \
+        # Create priv_validator_state.json if it doesn't exist
+        [ -f /cometbft/data/priv_validator_state.json ] || echo '{"height":"0","round":0,"step":0}' > /cometbft/data/priv_validator_state.json && \
+        # Copy genesis.json (contains validator with matching pub_key)
+        cp -f /cometbft-config/config/genesis.json /cometbft/config/genesis.json && \
+        # Initialize CometBFT config if it doesn't exist (creates default config.toml)
+        [ -f /cometbft/config/config.toml ] || cometbft init --home=/cometbft >/dev/null 2>&1 || true && \
+        # Update config.toml with production-optimized block time (3s)
+        sed -i 's/^timeout_commit = ".*"/timeout_commit = "3s"/' /cometbft/config/config.toml 2>/dev/null || true && \
+        sed -i 's/^timeout_propose = ".*"/timeout_propose = "4s"/' /cometbft/config/config.toml 2>/dev/null || true && \
+        # Change ownership to 1001:1001 if running as root, then switch user
+        chown -R 1001:1001 /cometbft 2>/dev/null || true && \
+        # Switch to user 1001:1001 for running CometBFT (if user exists)
+        (id -u 1001 >/dev/null 2>&1 && exec su-exec 1001:1001 cometbft node \
+          --home=/cometbft \
+          --proxy_app=tcp://service-04-usc-blockchain-core:26658 \
+          --p2p.laddr=tcp://0.0.0.0:26656 \
+          --rpc.laddr=tcp://0.0.0.0:26657 \
+          --log_level=info) || \
+        # Fallback: run as root if su-exec not available
+        exec cometbft node \
+          --home=/cometbft \
+          --proxy_app=tcp://service-04-usc-blockchain-core:26658 \
+          --p2p.laddr=tcp://0.0.0.0:26656 \
+          --rpc.laddr=tcp://0.0.0.0:26657 \
+          --log_level=info
+    volumes:
+      - cometbft_data:/cometbft  # CometBFT home (config/, data/)
+      # ✅ Read genesis từ ABCI server container (shared read-only)
+      # Service-04 creates genesis at /app/block-chain-cosmos/data/config/genesis.json
+      # Mount same volume so CometBFT can copy genesis.json
+      - blockchain_data:/cometbft-config:ro
+    depends_on:
+      service-04-usc-blockchain-core:
+        condition: service_healthy  # ✅ Đảm bảo ABCI server ready trước
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:26657/status || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+    restart: unless-stopped
+
+  # Service 05: USC Wallet
+  service-05-usc-wallet:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-05-usc-wallet/Dockerfile
+    container_name: usc-wallet
+    ports:
+      - "8005:8005"  # Main service port
+      - "9005:9005"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      service-04-usc-blockchain-core:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8005"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 06: Security
+  service-06-security:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-06-security/Dockerfile
+    container_name: usc-security
+    ports:
+      - "8006:8006"  # Main service port
+      - "9006:9006"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=security_db
+      - DB_NAME=security_db
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - REDIS_PASSWORD=
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - INFLUX_HOST=http://influxdb:8086
+      - INFLUX_ORG=usc
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8006"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 07: Caching
+  service-07-caching:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-07-caching/Dockerfile
+    container_name: usc-caching
+    ports:
+      - "8007:8007"  # Main service port
+      - "9007:9007"  # Metrics endpoint
+      - "7000:7000"  # Redis cluster communication
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - INFLUX_HOST=http://influxdb:8086
+      - INFLUX_ORG=usc
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8007"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 08: Monitoring
+  service-08-monitoring:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-08-monitoring/Dockerfile
+    container_name: usc-monitoring
+    ports:
+      - "8008:8008"  # Main service port
+      - "9008:9008"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - INFLUX_HOST=http://influxdb:8086
+      - INFLUX_ORG=usc
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8008"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 09: Social
+  service-09-social:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-09-social/Dockerfile
+    container_name: usc-social
+    ports:
+      - "8009:8009"  # Main service port
+      - "9009:9009"  # Metrics endpoint
+      - "8090:8090"  # WebSocket for real-time
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8009"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 10: USC Bilateral Rewards
+  service-10-usc-bilateral-rewards:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-10-usc-bilateral-rewards/Dockerfile
+    container_name: usc-rewards
+    ports:
+      - "8010:8010"  # Main service port
+      - "9010:9010"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8010"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 11: Content Management
+  service-11-content-management:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-11-content-management/Dockerfile
+    container_name: usc-content
+    ports:
+      - "8011:8011"  # Main service port
+      - "9011:9011"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - S3_ENDPOINT=http://minio:9000
+      - S3_ACCESS_KEY=admin
+      - S3_SECRET_KEY=password
+      - S3_BUCKET=content-storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8011"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 12: Video Service
+  service-12-video-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-12-video-service/Dockerfile
+    container_name: usc-video
+    ports:
+      - "8012:8012"  # Main service port
+      - "9012:9012"  # Metrics endpoint
+      - "1935:1935"  # RTMP streaming
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - CDN_ENDPOINT=http://minio:9000
+      - CDN_ACCESS_KEY=admin
+      - CDN_SECRET_KEY=password
+      - CDN_BUCKET=video-storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8012"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 13: AI Service
+  service-13-ai-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-13-ai-service/Dockerfile
+    container_name: usc-ai
+    ports:
+      - "8013:8013"  # Main service port
+      - "9013:9013"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - VECTOR_DB_HOST=qdrant
+      - VECTOR_DB_PORT=6333
+      - INFLUX_HOST=http://influxdb:8086
+      - INFLUX_ORG=usc
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      influxdb:
+        condition: service_healthy
+      torchserve:
+        condition: service_started
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8013"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 14: Commerce Service
+  service-14-commerce-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-14-commerce-service/Dockerfile
+    container_name: usc-commerce
+    ports:
+      - "8014:8014"  # Main service port
+      - "9014:9014"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8014"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 15: Notification Service
+  service-15-notification-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-15-notification-service/Dockerfile
+    container_name: usc-notification
+    ports:
+      - "8015:8015"  # Main service port
+      - "9015:9015"  # Metrics endpoint
+      - "8091:8091"  # WebSocket for real-time
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - INFLUX_HOST=http://influxdb:8086
+      - INFLUX_ORG=usc
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      # AWS SES Configuration
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=ap-southeast-1
+      - AWS_SES_FROM_EMAIL=hoangbac.hnb.g@gmail.com
+      - AWS_SES_FROM_NAME=USC-Notification-Service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8015"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 16: Search Service
+  service-16-search-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-16-search-service/Dockerfile
+    container_name: usc-search
+    ports:
+      - "8016:8016"  # Main service port
+      - "9016:9016"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      quickwit:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8016"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 17: Analytics Service
+  service-17-analytics-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-17-analytics-service/Dockerfile
+    container_name: usc-analytics
+    ports:
+      - "8017:8017"  # Main service port
+      - "9017:9017"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - INFLUX_HOST=http://influxdb:8086
+      - INFLUX_ORG=usc
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - BIGQUERY_PROJECT_ID=usc-analytics
+      - BIGQUERY_DATASET=analytics_data
+      - BIGQUERY_ENABLED=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8017"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 18: Moderation Service
+  service-18-moderation-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-18-moderation-service/Dockerfile
+    container_name: usc-moderation
+    ports:
+      - "8018:8018"  # Main service port
+      - "9018:9018"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8018"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 19: Recommendation Service
+  service-19-recommendation-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-19-recommendation-service/Dockerfile
+    container_name: usc-recommendation
+    ports:
+      - "8019:8019"  # Main service port
+      - "9019:9019"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - VECTOR_DB_HOST=qdrant
+      - VECTOR_DB_PORT=6333
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8019"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 20: Advertising Service
+  service-20-advertising-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-20-advertising-service/Dockerfile
+    container_name: usc-advertising
+    ports:
+      - "8020:8020"  # Main service port
+      - "9020:9020"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8020"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 21: Admin Service
+  service-21-admin-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-21-admin-service/Dockerfile
+    container_name: usc-admin
+    ports:
+      - "8021:8021"  # Main service port
+      - "9021:9021"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+      - INFLUX_HOST=http://influxdb:8086
+      - INFLUX_ORG=usc
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8021"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Service 22: Kafka Messaging Service
+  service-22-kafka-messaging-service:
+    build:
+      context: ..
+      dockerfile: ./SERVICES/service-22-kafka-messaging-service/Dockerfile
+    container_name: usc-kafka-messaging
+    ports:
+      - "8022:8022"  # Main service port
+      - "9022:9022"  # Metrics endpoint
+    environment:
+      - CONFIG_PATH=/app/config/config.yaml
+      - POSTGRES_PASSWORD=password
+      - REDIS_PASSWORD=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - usc-network
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:8022"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+# ========================================
+# NETWORKS
+# ========================================
+networks:
+  usc-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ========================================
+# VOLUMES
+# ========================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  clickhouse_data:
+    driver: local
+  influxdb_data:
+    driver: local
+  quickwit_data:
+  quickwit_config:
+    driver: local
+  kafka_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  qdrant_data:
+    driver: local
+  minio_data:
+    driver: local
+  blockchain_data:
+    driver: local
+  cometbft_data:
+    driver: local
+  torchserve_models:
+    driver: local

@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package blockchain.v1;
+
+option go_package = "github.com/usc-platform/usc-social-xxx-app/services/blockchain/gen/blockchain/v1;blockchainv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// Block operations service for blockchain block management
+service BlockOperationsService {
+  // Create new blockchain blocks
+  rpc ProduceBlock(ProduceBlockRequest) returns (ProduceBlockResponse);
+  
+  // Validate block integrity
+  rpc ValidateBlock(ValidateBlockRequest) returns (ValidateBlockResponse);
+  
+  // Retrieve specific block
+  rpc GetBlock(GetBlockRequest) returns (GetBlockResponse);
+  
+  // Get block by hash
+  rpc GetBlockByHash(GetBlockByHashRequest) returns (GetBlockResponse);
+  
+  // Current blockchain head
+  rpc GetLatestBlock(google.protobuf.Empty) returns (GetBlockResponse);
+  
+  // Get blockchain block range data
+  rpc GetBlockRange(GetBlockRangeRequest) returns (GetBlockRangeResponse);
+}
+
+// Produce block request
+message ProduceBlockRequest {
+  string validator_id = 1;
+  repeated string transaction_hashes = 2;
+  string previous_block_hash = 3;
+  int64 timestamp = 4;
+  int64 nonce = 5;
+  string merkle_root = 6;
+}
+
+// Produce block response
+message ProduceBlockResponse {
+  string block_hash = 1;
+  int64 block_number = 2;
+  string block_data = 3;
+  google.protobuf.Timestamp created_at = 4;
+  bool success = 5;
+  string error_message = 6;
+}
+
+// Validate block request
+message ValidateBlockRequest {
+  string block_hash = 1;
+  string block_data = 2;
+  string previous_block_hash = 3;
+  int64 block_number = 4;
+}
+
+// Validate block response
+message ValidateBlockResponse {
+  bool valid = 1;
+  string validation_result = 2;
+  repeated string errors = 3;
+  google.protobuf.Timestamp validated_at = 4;
+}
+
+// Get block request
+message GetBlockRequest {
+  int64 block_number = 1;
+  bool include_transactions = 2;
+}
+
+// Get block by hash request
+message GetBlockByHashRequest {
+  string block_hash = 1;
+  bool include_transactions = 2;
+}
+
+// Block response
+message GetBlockResponse {
+  string block_hash = 1;
+  int64 block_number = 2;
+  string previous_block_hash = 3;
+  string merkle_root = 4;
+  int64 timestamp = 5;
+  int64 nonce = 6;
+  string validator_address = 7;
+  repeated Transaction transactions = 8;
+  int64 gas_used = 9;
+  int64 gas_limit = 10;
+  string extra_data = 11;
+  google.protobuf.Timestamp created_at = 12;
+}
+
+// Get block range request
+message GetBlockRangeRequest {
+  int64 start_block = 1;
+  int64 end_block = 2;
+  bool include_transactions = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+}
+
+// Get block range response
+message GetBlockRangeResponse {
+  repeated GetBlockResponse blocks = 1;
+  int32 total_count = 2;
+  bool has_more = 3;
+  int64 next_offset = 4;
+}
+
+// Transaction structure
+message Transaction {
+  string transaction_hash = 1;
+  string from_address = 2;
+  string to_address = 3;
+  string amount = 4;
+  string gas_price = 5;
+  int64 gas_limit = 6;
+  string data = 7;
+  int64 nonce = 8;
+  string signature = 9;
+  int32 status = 10; // 0=Pending, 1=Confirmed, 2=Failed
+  google.protobuf.Timestamp created_at = 11;
+}
